@@ -1,52 +1,42 @@
-/* AmberPay design system — implements master prompt §13 exactly.
-   Three-layer tokens: primitive → semantic → component (§13.1).
-   Trust-first: calm, credible, quietly premium. Variance 3/10, motion 3/10,
-   density 4/10. One accent (amber). No pure black/white.
-
-   Contrast decisions (WCAG 2.2 AA, §13.7) — measured, not assumed:
-   - ink-900 on paper-100: 15.2:1 ✓      ink-500 on paper-100: 5.5:1 ✓
-   - ink-900 on amber-600 (primary button label): 4.9:1 ✓
-   - white on amber-800 (button hover): 5.5:1 ✓
-   - amber-800 links on surface-0/paper-100: 5.5:1 / 4.9:1 ✓
-   - amber-600 on navy-900 (brand on trust surface): 4.6:1 ✓
-   - gold-800 on gold-100 measures 4.46:1 — marginally below AA for small
-     text, so the pending pill foreground is gold-800 darkened 15% toward
-     ink-900 (≈5.5:1) via color-mix. Same guard applied nowhere else yet:
-     green-700/green-100 = 4.6:1 ✓, red-700/red-100 = 5.6:1 ✓,
-     white/navy-700 = 12.8:1 ✓.
-   amber-600 itself is reserved for surfaces/fills; never small text on light
-   backgrounds (3.7:1 on white fails AA — the classic gold-on-white failure
-   §13.7 warns about). */
+/* AmberPay design system v2 — refined trust-first, adaptive mobile-first.
+   Keeps the §13 contract (one accent, restrained motion, WCAG 2.2 AA) and
+   sharpens it: warmer paper, deeper navy, crisper radii, and a real
+   responsive shell — bottom tab bar on phones, sidebar on ≥1024px, and the
+   content column stops being a lonely centered phone (the "white screen"). */
 
 /* ------------------------------------------------------------------ */
-/* Primitive tokens (§13.1)                                            */
+/* Primitive tokens                                                    */
 /* ------------------------------------------------------------------ */
 :root {
-  --ink-900: #14161c;
-  --ink-500: #5b6070;
-  --ink-300: #8a8f9e;
-  --paper-100: #eff1f5;
+  --ink-900: #161a22;
+  --ink-700: #333a48;
+  --ink-500: #5d6373;
+  --ink-300: #8b90a0;
+  --paper-100: #f4f2ec;
+  --paper-200: #eae7de;
   --surface-0: #ffffff;
-  --line-200: #e3e6ed;
+  --line-200: #e5e2d9;
+  --line-300: #d6d2c6;
   --amber-600: #b4790a;
   --amber-800: #8f5f06;
-  --amber-100: #fcf0da;
-  --navy-900: #101b33;
+  --amber-100: #fdf3e1;
+  --navy-900: #0f1b33;
+  --navy-800: #16264a;
   --navy-700: #26324d;
   --green-700: #1e7a4c;
   --green-100: #e4f3ea;
   --gold-800: #9a6300;
-  --gold-100: #fbf0d9;
+  --gold-100: #fdf3dc;
   --red-700: #b3261e;
   --red-100: #fbeae9;
-  --info-100: #e9eff9;
+  --info-100: #edf1f8;
 
   --radius-lg2: 20px;
   --ease-out2: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* ------------------------------------------------------------------ */
-/* Semantic tokens (§13.1)                                             */
+/* Semantic + component tokens                                         */
 /* ------------------------------------------------------------------ */
 :root {
   --color-text-primary: var(--ink-900);
@@ -55,6 +45,7 @@
   --color-bg-app: var(--paper-100);
   --color-bg-surface: var(--surface-0);
   --color-border: var(--line-200);
+  --color-border-strong: var(--line-300);
   --color-action-primary: var(--amber-600);
   --color-action-primary-strong: var(--amber-800);
   --color-action-surface: var(--amber-100);
@@ -68,21 +59,19 @@
   --color-status-reversed-bg: var(--red-100);
   --color-focus: var(--amber-800);
 
-  /* Component tokens (§13.1 example set) */
   --button-primary-bg: var(--color-action-primary);
   --button-primary-bg-hover: var(--color-action-primary-strong);
   --button-primary-fg: var(--ink-900);
   --button-primary-fg-hover: var(--surface-0);
   --pill-pending-bg: var(--color-status-pending-bg);
-  /* gold-800 on gold-100 is 4.46:1 — below AA for small text — so darken. */
   --pill-pending-fg: color-mix(in srgb, var(--gold-800) 85%, var(--ink-900));
 
   --radius-s: 0.375rem;
   --radius-m: 0.625rem;
   --radius-l: 0.875rem;
-  --shadow-card: 0 1px 2px rgb(20 22 28 / 0.05), 0 2px 8px rgb(20 22 28 / 0.04);
+  --shadow-card: 0 1px 2px rgb(15 27 51 / 0.05), 0 2px 10px rgb(15 27 51 / 0.05);
+  --shadow-float: 0 -1px 0 var(--line-200), 0 -6px 20px rgb(15 27 51 / 0.06);
 
-  /* Motion (§13.3): transform/opacity only, ease-out, 140–260ms. */
   --motion-fast: 140ms;
   --motion-base: 200ms;
   --motion-slow: 260ms;
@@ -98,11 +87,10 @@
   box-sizing: border-box;
 }
 
-/* §13.2: system font stack, one family, sentence case everywhere. */
 body {
   margin: 0;
   font-family: -apple-system, 'Segoe UI', system-ui, Roboto, sans-serif;
-  background: var(--color-bg-app);
+  background: var(--paper-200);
   color: var(--color-text-primary);
   line-height: 1.5;
   font-size: 16px;
@@ -110,21 +98,19 @@ body {
 }
 
 #root {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  min-height: 100dvh;
 }
 
 h1 {
   font-size: 1.5rem;
-  font-weight: 650;
+  font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1.2;
   margin: 0 0 0.75rem;
 }
 
 h2 {
-  font-weight: 650;
+  font-weight: 700;
   margin: 0 0 0.5rem;
 }
 
@@ -146,7 +132,6 @@ code {
   font-size: 0.85em;
 }
 
-/* §13.7: visible focus states on everything interactive. */
 :focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
@@ -163,6 +148,165 @@ hr.hair {
   margin: 0;
 }
 
+.muted { color: var(--color-text-secondary); }
+.faint { color: var(--color-text-tertiary); }
+
+.row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ------------------------------------------------------------------ */
+/* Adaptive app shell                                                  */
+/* Mobile: single column, bottom tab bar. Desktop ≥1024px: fixed      */
+/* sidebar with nav + brand; content scrolls beside it.               */
+/* ------------------------------------------------------------------ */
+.app-shell {
+  min-height: 100dvh;
+  max-width: 520px;
+  margin: 0 auto;
+  background: var(--color-bg-app);
+  display: flex;
+  flex-direction: column;
+}
+
+.app-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sidebar nav on wide screens — hidden on mobile. */
+.sidenav {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .app-shell {
+    flex-direction: row;
+    max-width: none;
+    align-items: stretch;
+  }
+
+  .sidenav {
+    display: flex;
+    flex-direction: column;
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--navy-900);
+    color: var(--surface-0);
+    padding: 22px 14px calc(16px + env(safe-area-inset-bottom));
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    gap: 2px;
+  }
+
+  .sidenav .brand {
+    color: var(--amber-600);
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: -0.01em;
+    padding: 0 10px 18px;
+  }
+
+  .sidenav a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    border-radius: var(--radius-m);
+    color: rgb(255 255 255 / 0.72);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition:
+      background var(--motion-fast) var(--ease-out),
+      color var(--motion-fast) var(--ease-out);
+  }
+
+  .sidenav a:hover {
+    background: rgb(255 255 255 / 0.06);
+    color: var(--surface-0);
+  }
+
+  .sidenav a.active {
+    background: rgb(180 121 10 / 0.22);
+    color: var(--surface-0);
+  }
+
+  .sidenav .foot {
+    margin-top: auto;
+    padding: 14px 12px 0;
+    font-size: 0.68rem;
+    color: rgb(255 255 255 / 0.4);
+    line-height: 1.5;
+  }
+
+  .app-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .app-body {
+    max-width: 720px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .bottomnav {
+    display: none;
+  }
+}
+
+.offline-banner {
+  background: var(--navy-900);
+  color: var(--surface-0);
+  padding: 0.5rem 1rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.bottomnav {
+  display: flex;
+  border-top: 1px solid var(--line-300);
+  background: var(--color-bg-surface);
+  padding: 6px 4px calc(10px + env(safe-area-inset-bottom));
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  box-shadow: var(--shadow-float);
+}
+
+.navbtn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  color: var(--color-text-tertiary);
+  font-size: 0.66rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: none;
+}
+
+.navbtn.active {
+  color: var(--amber-800);
+}
+
+.navbtn:active {
+  transform: scale(0.94);
+}
+
 /* ------------------------------------------------------------------ */
 /* Buttons and links                                                   */
 /* ------------------------------------------------------------------ */
@@ -171,9 +315,9 @@ hr.hair {
   color: var(--button-primary-fg);
   border: none;
   border-radius: var(--radius-m);
-  padding: 0.65rem 1.25rem;
+  padding: 0.7rem 1.25rem;
   font: inherit;
-  font-weight: 600;
+  font-weight: 650;
   cursor: pointer;
   transition:
     transform var(--motion-fast) var(--ease-out),
@@ -186,7 +330,6 @@ hr.hair {
   color: var(--button-primary-fg-hover);
 }
 
-/* §13.3: instant press feedback, not just on release. */
 .button:active {
   transform: scale(0.97);
 }
@@ -199,7 +342,7 @@ hr.hair {
 .button-ghost {
   background: transparent;
   color: var(--navy-900);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
 }
 
 .button-ghost:hover {
@@ -217,7 +360,11 @@ hr.hair {
   color: var(--surface-0);
 }
 
-/* Small amber-deep text link, as in the prototype. */
+.button-sm {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.82rem;
+}
+
 .link {
   color: var(--amber-800);
   font-weight: 600;
@@ -234,89 +381,6 @@ hr.hair {
   cursor: not-allowed;
 }
 
-.muted {
-  color: var(--color-text-secondary);
-}
-
-.faint {
-  color: var(--color-text-tertiary);
-}
-
-.row {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-/* ------------------------------------------------------------------ */
-/* Mobile app shell — the prototype's phone layout, production-width.  */
-/* ------------------------------------------------------------------ */
-/* Horizontal page gutter (prototype: 20px). */
-.px {
-  padding-left: 20px;
-  padding-right: 20px;
-}
-
-.app-shell {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  max-width: 480px;
-  margin: 0 auto;
-  background: var(--color-bg-app);
-  min-height: 100dvh;
-}
-
-.app-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-}
-
-.offline-banner {
-  background: var(--navy-900);
-  color: var(--surface-0);
-  padding: 0.5rem 1rem;
-  text-align: center;
-  font-size: 0.9rem;
-}
-
-.bottomnav {
-  display: flex;
-  border-top: 1px solid var(--color-border);
-  background: var(--color-bg-surface);
-  padding: 6px 4px calc(10px + env(safe-area-inset-bottom));
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-}
-
-.navbtn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding: 6px 0;
-  background: none;
-  border: none;
-  color: var(--color-text-tertiary);
-  font-size: 0.66rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.navbtn.active {
-  color: var(--amber-800);
-}
-
-.navbtn:active {
-  transform: scale(0.94);
-}
-
 /* ------------------------------------------------------------------ */
 /* Cards and forms                                                     */
 /* ------------------------------------------------------------------ */
@@ -329,7 +393,6 @@ hr.hair {
   flex-direction: column;
   gap: 1rem;
   box-shadow: var(--shadow-card);
-  /* §13.3: entry is a restrained ease-out rise; transform/opacity only. */
   animation: card-enter var(--motion-base) var(--ease-out);
 }
 
@@ -344,7 +407,6 @@ hr.hair {
   }
 }
 
-/* Flat prototype card (no shadow, tight padding) for in-flow rows. */
 .card-flat {
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border);
@@ -362,20 +424,33 @@ label {
 }
 
 input,
-select {
+select,
+textarea {
   background: var(--color-bg-surface);
   color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-m);
-  padding: 0.6rem 0.75rem;
+  padding: 0.65rem 0.75rem;
   font: inherit;
-  /* Keypad entry must feel instant (§13.3): no transitions here. */
 }
 
 .form-error {
   color: var(--red-700);
   font-size: 0.85rem;
   margin: 0;
+}
+
+/* Horizontal gutter. Wider on desktop where the column has room. */
+.px {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+@media (min-width: 1024px) {
+  .px {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -420,7 +495,6 @@ select {
   color: var(--color-status-reversed);
 }
 
-/* Small inline pills used inside transaction rows. */
 .pill-sm {
   font-size: 0.68rem;
   font-weight: 700;
@@ -439,19 +513,19 @@ select {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding-top: 16px;
+  padding-top: 18px;
 }
 
 .greet h2 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
 }
 
 .icon-btn {
   width: 38px;
   height: 38px;
   border-radius: 999px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   background: var(--color-bg-surface);
   display: flex;
   align-items: center;
@@ -464,25 +538,14 @@ select {
 }
 
 .balance-card {
-  background: var(--color-trust-surface);
+  background:
+    radial-gradient(140px 140px at 100% 0%, rgb(180 121 10 / 0.22), transparent 70%),
+    var(--color-trust-surface);
   color: var(--surface-0);
   border-radius: var(--radius-lg2);
-  padding: 20px;
+  padding: 22px 20px;
   margin-top: 14px;
   position: relative;
-  overflow: hidden;
-}
-
-/* The prototype's single amber glow, brand mark not decoration. */
-.balance-card::after {
-  content: '';
-  position: absolute;
-  right: -40px;
-  top: -40px;
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  background: rgb(180 121 10 / 0.18);
 }
 
 .balance-label {
@@ -494,34 +557,81 @@ select {
 }
 
 .balance-amount {
-  font-size: 2.1rem;
+  font-size: 2.3rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  margin: 6px 0 2px;
+  margin: 8px 0 4px;
   font-variant-numeric: tabular-nums;
-}
-
-.balance-sub {
-  font-size: 0.72rem;
-  color: rgb(255 255 255 / 0.55);
 }
 
 .balance-amount .masked {
   letter-spacing: 0.08em;
 }
 
-.quick-actions {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-top: 16px;
+.balance-sub {
+  font-size: 0.74rem;
+  color: rgb(255 255 255 / 0.58);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.qa {
+.balance-eye {
+  background: rgb(255 255 255 / 0.14);
+  border: none;
+  color: #fff;
+  border-radius: 999px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.balance-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.balance-chip {
+  background: rgb(255 255 255 / 0.1);
+  color: rgb(255 255 255 / 0.85);
+  border: none;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 650;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+.balance-chip[aria-pressed='true'] {
+  background: var(--amber-600);
+  color: var(--ink-900);
+}
+
+/* Services grid — the OPay lesson: everything one tap away. */
+.services {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px 8px;
+  margin-top: 18px;
+}
+
+@media (min-width: 480px) {
+  .services {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+.svc {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   background: none;
   border: none;
   cursor: pointer;
@@ -529,37 +639,130 @@ select {
   font-family: inherit;
 }
 
-.qa .circ {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
+.svc .circ {
+  width: 50px;
+  height: 50px;
+  border-radius: 16px;
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: transform var(--motion-fast) var(--ease-out);
 }
 
-.qa:active .circ {
-  transform: scale(0.93);
+.svc:active .circ {
+  transform: scale(0.92);
 }
 
-.qa span:last-child {
-  font-size: 0.68rem;
+.svc .circ.trust {
+  background: var(--color-trust-surface);
+  border-color: var(--color-trust-surface);
+}
+
+.svc span.lbl {
+  font-size: 0.7rem;
   font-weight: 600;
   color: var(--color-text-secondary);
+  text-align: center;
+  line-height: 1.25;
+}
+
+/* Locked/unbuilt services stay visibly locked, not silently dead. */
+.svc[aria-disabled='true'] .circ {
+  opacity: 0.55;
+}
+
+.svc[aria-disabled='true'] span.lbl {
+  color: var(--color-text-tertiary);
+}
+
+/* Trust strip — receipts/ledger provenance as a feature, not a footnote. */
+.trust-strip {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--amber-100);
+  border: 1px solid color-mix(in srgb, var(--amber-600) 25%, transparent);
+  border-radius: var(--radius-m);
+  padding: 10px 12px;
+  margin-top: 18px;
+  font-size: 0.74rem;
+  color: var(--amber-800);
+  line-height: 1.45;
+}
+
+.trust-strip svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Vault cards on Home. */
+.vault-card {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-l);
+  box-shadow: var(--shadow-card);
+  padding: 14px 16px;
+  margin-top: 12px;
+}
+
+.vault-card .v-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.vault-card .v-name {
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.vault-card .v-amount {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin-top: 4px;
+}
+
+.vault-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--paper-200);
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.vault-progress > div {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--amber-600);
+  transition: width var(--motion-slow) var(--ease-out);
+}
+
+.vault-progress .goal-met {
+  background: var(--green-700);
+}
+
+.vault-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--color-text-tertiary);
+  margin-top: 6px;
 }
 
 .section-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 20px 0 8px;
+  margin: 22px 0 8px;
 }
 
 .section-head h3 {
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   margin: 0;
 }
 
@@ -570,7 +773,7 @@ select {
   display: flex;
   align-items: center;
   gap: 11px;
-  padding: 11px 0;
+  padding: 12px 0;
 }
 
 .tx-avatar {
@@ -593,7 +796,7 @@ select {
 }
 
 .tx-name {
-  font-size: 0.86rem;
+  font-size: 0.87rem;
   font-weight: 600;
 }
 
@@ -608,7 +811,7 @@ select {
 }
 
 .tx-amt {
-  font-size: 0.86rem;
+  font-size: 0.87rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -627,10 +830,15 @@ select {
   gap: 8px;
   overflow-x: auto;
   padding: 2px 0 4px;
+  scrollbar-width: none;
+}
+
+.chiprow::-webkit-scrollbar {
+  display: none;
 }
 
 .chip {
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   background: var(--color-bg-surface);
   padding: 7px 13px;
   border-radius: 999px;
@@ -668,7 +876,7 @@ select {
   border-radius: 50%;
   border: none;
   background: var(--color-bg-surface);
-  box-shadow: 0 1px 0 var(--color-border);
+  box-shadow: 0 1px 0 var(--color-border-strong);
   font-size: 1.15rem;
   font-weight: 600;
   color: var(--color-text-primary);
@@ -684,7 +892,7 @@ select {
 
 .keypad .key:active {
   transform: scale(0.93);
-  background: var(--color-bg-app);
+  background: var(--paper-100);
 }
 
 .keypad .key.ghost {
@@ -719,6 +927,7 @@ select {
 /* ------------------------------------------------------------------ */
 /* Send flow                                                           */
 /* ------------------------------------------------------------------ */
+/* Saved-recipient grid on the Send flow (docs/ux-flows.md §3.4). */
 .beneficiary-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -754,13 +963,17 @@ select {
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--color-text-secondary);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.ben.selected {
+.ben:active {
   border-color: var(--amber-600);
 }
 
-.ben.selected span:last-child {
+.ben:active span:last-child {
   color: var(--color-text-primary);
 }
 
@@ -787,6 +1000,7 @@ select {
   justify-content: space-between;
   font-size: 0.82rem;
   padding: 9px 0;
+  gap: 12px;
 }
 
 .breakdown-row.total {
@@ -825,7 +1039,7 @@ select {
   justify-content: center;
   gap: 12px;
   text-align: center;
-  padding: 0 30px;
+  padding: 0 30px 30px;
 }
 
 .ring {
@@ -843,7 +1057,7 @@ select {
 }
 
 /* ------------------------------------------------------------------ */
-/* Security centre rows and toggles                                    */
+/* Security centre rows                                                */
 /* ------------------------------------------------------------------ */
 .set-row {
   display: flex;
@@ -872,7 +1086,7 @@ select {
 }
 
 .set-row .lbl {
-  font-size: 0.86rem;
+  font-size: 0.87rem;
   font-weight: 600;
 }
 
@@ -880,39 +1094,6 @@ select {
   font-size: 0.72rem;
   color: var(--color-text-tertiary);
   margin-top: 1px;
-}
-
-.toggle {
-  width: 42px;
-  height: 25px;
-  border-radius: 999px;
-  background: var(--line-200);
-  position: relative;
-  cursor: pointer;
-  border: none;
-  flex-shrink: 0;
-  transition: background 160ms var(--ease-out);
-}
-
-.toggle::after {
-  content: '';
-  position: absolute;
-  width: 19px;
-  height: 19px;
-  border-radius: 50%;
-  background: var(--surface-0);
-  top: 3px;
-  left: 3px;
-  transition: transform 160ms var(--ease-out);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
-}
-
-.toggle.on {
-  background: var(--green-700);
-}
-
-.toggle.on::after {
-  transform: translateX(17px);
 }
 
 .group-label {
@@ -923,12 +1104,12 @@ select {
 }
 
 /* ------------------------------------------------------------------ */
-/* Bottom sheet (destructive confirmations, §13.4)                     */
+/* Bottom sheet                                                        */
 /* ------------------------------------------------------------------ */
 .sheet-back {
   position: fixed;
   inset: 0;
-  background: rgb(16 27 51 / 0.45);
+  background: rgb(15 27 51 / 0.45);
   display: flex;
   align-items: flex-end;
   z-index: 20;
@@ -937,7 +1118,7 @@ select {
 .sheet {
   background: var(--color-bg-surface);
   width: 100%;
-  max-width: 480px;
+  max-width: 520px;
   margin: 0 auto;
   border-radius: 22px 22px 0 0;
   padding: 22px 20px 26px;
@@ -972,85 +1153,11 @@ select {
 }
 
 /* ------------------------------------------------------------------ */
-/* Auth screens                                                        */
-/* ------------------------------------------------------------------ */
-.auth-screen {
-  max-width: 26rem;
-  margin: 10vh auto 0;
-  padding: 0 1rem 3rem;
-  width: 100%;
-  /* Even vertical rhythm between heading, notice card, form card and
-     footer links on every auth screen. */
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.auth-screen h1 {
-  margin-bottom: 0;
-}
-
-/* Hairline divider with a centered label, between the password form and
-   the magic-link option (replaces the never-styled .oauth-divider). */
-.auth-divider {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: var(--color-text-tertiary);
-  font-size: 0.78rem;
-  font-weight: 600;
-}
-
-.auth-divider::before,
-.auth-divider::after {
-  content: '';
-  flex: 1;
-  border-top: 1px solid var(--color-border);
-}
-
-/* Centered footer links under the auth card. */
-.auth-footer {
-  text-align: center;
-  font-size: 0.85rem;
-  margin: 0;
-}
-
-/* Auth form cards share a tighter internal rhythm than the default card
-   (labels/inputs/divider sit closer than standard 1rem card children). */
-.auth-card {
-  gap: 0.6rem;
-}
-
-/* Success confirmation after a sign-in email is sent. Uses the completed
-   status tokens (green-700 on green-100 = 4.6:1 ✓ per the audit above). */
-.auth-success-head {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-}
-
-.auth-success-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: var(--color-status-completed-bg);
-  color: var(--color-status-completed);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.auth-success-head strong {
-  font-size: 0.9rem;
-}
-
-/* ------------------------------------------------------------------ */
 /* Screen states                                                       */
 /* ------------------------------------------------------------------ */
 .screen-state {
   text-align: center;
-  padding: 3rem 1rem;
+  padding: 3.5rem 1rem;
 }
 
 .screen-state h2 {
@@ -1063,6 +1170,10 @@ select {
   margin: 0 auto 1.25rem;
 }
 
+.screen-state .ring {
+  margin: 0 auto 14px;
+}
+
 .empty-note {
   text-align: center;
   margin-top: 40px;
@@ -1070,8 +1181,43 @@ select {
   color: var(--color-text-secondary);
 }
 
+/* Placeholder screens for spec'd-but-unbuilt journeys: honest, calm, and      */
+/* with a route back to what works.                                           */
+.placeholder {
+  padding: 2rem 0 2.5rem;
+  text-align: center;
+}
+
+.placeholder .ph-ring {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--info-100);
+  color: var(--navy-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+}
+
+.placeholder h1 {
+  font-size: 1.2rem;
+  margin-bottom: 6px;
+}
+
+.placeholder p {
+  color: var(--color-text-secondary);
+  font-size: 0.86rem;
+  max-width: 26rem;
+  margin: 0 auto 16px;
+}
+
+.placeholder code {
+  word-break: break-all;
+}
+
 /* ------------------------------------------------------------------ */
-/* Reduced motion (§13.3): cross-fades only, no movement.              */
+/* Reduced motion (§13.3)                                              */
 /* ------------------------------------------------------------------ */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1093,7 +1239,7 @@ select {
   .button:active,
   .navbtn:active,
   .icon-btn:active,
-  .qa:active .circ,
+  .svc:active .circ,
   .keypad .key:active {
     transform: none;
   }

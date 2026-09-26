@@ -105,6 +105,16 @@ export interface StatementPage {
   next_page_token: string;
 }
 
+// --- Beneficiaries (docs/ux-flows.md §3.4 — GET /v1/beneficiaries) ----------
+
+/** A saved recipient. The server resolves the person behind the handle;
+ *  the client renders only what the API returns. */
+export interface Beneficiary {
+  id: string;
+  name: string;
+  email_or_phone: string;
+}
+
 /** problem+json error contract (docs/api.md). */
 export interface ApiErrorBody {
   error: {
@@ -123,4 +133,51 @@ export interface Identity {
   email?: string;
   name?: string;
   exp?: number;
+}
+
+// --- Vault (goal savings over ledger holds — docs/vault.md §2) -------------
+
+/** One ledger hold inside a goal. Locks are atomic: unlock releases the
+ *  whole hold (the engine has no partial release). */
+export interface VaultLock {
+  hold_id: string;
+  amount_minor: number;
+  locked_at: string;
+  expires_at?: string;
+}
+
+export interface VaultGoal {
+  id: string;
+  name: string;
+  status: 'active' | 'released' | (string & {});
+  currency: Currency;
+  locked_minor: number;
+  target_minor?: number;
+  maturity_at?: string;
+  locks: VaultLock[];
+}
+
+export interface CreateGoalRequest {
+  name: string;
+  currency: Currency;
+  amount_minor: number;
+  target_minor?: number;
+  maturity_at?: string;
+}
+
+export interface CreateGoalResponse {
+  id: string;
+  status: string;
+  locked_minor: number;
+  hold_id: string;
+}
+
+export interface AddLockResponse {
+  hold_id: string;
+  locked_minor: number;
+}
+
+export interface ReleaseResponse {
+  released_minor: number;
+  released_holds: number;
 }

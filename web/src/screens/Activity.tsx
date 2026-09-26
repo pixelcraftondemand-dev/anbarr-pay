@@ -102,8 +102,11 @@ export function Activity() {
 
   return (
     <div>
-      <div className="px" style={{ paddingTop: 16 }}>
-        <h2 style={{ margin: '0 0 12px' }}>Activity</h2>
+      <div className="px" style={{ paddingTop: 18 }}>
+        <h2 style={{ margin: '0 0 4px' }}>Activity</h2>
+        <p className="faint" style={{ fontSize: '.78rem', margin: '0 0 12px' }}>
+          Every entry below is the ledger's own record — nothing is summarized away.
+        </p>
         <div className="chiprow" role="tablist" aria-label="Filter activity">
           {FILTERS.map((f) => (
             <button
@@ -121,7 +124,7 @@ export function Activity() {
       </div>
       <div className="px" style={{ paddingBottom: 16 }}>
         {visible.length === 0 ? (
-          <p className="empty-note">Nothing here yet.</p>
+          <p className="empty-note">Nothing matches this filter yet.</p>
         ) : (
           visible.map((entry) => (
             <div key={entry.entry_id}>
@@ -142,8 +145,8 @@ export function Activity() {
           </button>
         )}
         <p className="faint" style={{ fontSize: '.72rem', marginTop: 10 }}>
-          Entries are the ledger's own record — direction and amounts are authoritative, fetched
-          live from <code>/wallets/{state.wallet.id.slice(0, 8)}…/transactions</code>.
+          Dispute any transfer or top-up from its receipt screen — the case attaches to the
+          transaction itself, not to a phone queue.
         </p>
       </div>
     </div>

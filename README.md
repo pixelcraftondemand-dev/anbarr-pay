@@ -26,6 +26,11 @@ ledger/                   the amber-ledger crate
   src/types.rs            domain types (sum types, no illegal states)
   migrations/             sqlx migrations (schema is version-controlled)
   tests/                  integration tests (real Postgres) + property tests
+core-api/                 the anbarr-core-api crate — app-domain REST boundary
+  src/vault.rs            Vault goal savings (docs/vault.md): metadata + ledger holds via gRPC
+  src/wallets.rs          wallet registry (caller → verified ledger account)
+  migrations/             core metadata schema (wallet_links, vault_goals, vault_goal_locks)
+  tests/                  integration tests: in-process ledger gRPC + real Postgres
 web/                      React (TypeScript, Vite) SPA — the thin view layer
 docs/                     architecture, API surface, and schema proposals
 .github/workflows/        CI + nightly security pipelines
@@ -59,7 +64,38 @@ The tests use `postgres://amber:amber_dev@localhost:5433/amber` by default;
 override with `DATABASE_URL` (see below). Each test binary runs in its own
 Postgres **schema** (`test_<binary>` via `search_path`), so the parallel
 binaries never step on each other's shared singleton accounts
-(`ledger/tests/common/mod.rs`).
+(`ledger/tests/common/mod.rs`). The core-api tests additionally use the
+`amber_core_test` database (created on the fly) for app metadata — the
+boundary under test.
+
+### Core API (vault endpoints)
+
+The Core API is the app-domain service (docs/architecture.md): it owns
+metadata (wallet registry, vault goals) and drives money movement **only**
+through the ledger's gRPC contract — it never writes ledger tables.
+
+```bash
+# 0. One-time: the core metadata database (init script also does this)
+docker exec amber-postgres psql -U amber -c 'CREATE DATABASE amber_core'
+
+# 1. Start the ledger gRPC server (terminal 1)
+cargo run -p amber-ledger
+
+# 2. Start the Core API (terminal 2) — REST on :8080
+cargo run -p anbarr-core-api
+```
+
+Endpoints (contract in `docs/api.md` §6b/§6c and `docs/vault.md`):
+
+- `POST /v1/wallets` — link the caller to a ledger account (verified via
+  `GetAccount` before storing); `GET /v1/wallets` — live balances
+- `POST /v1/vault/goals` — create a goal + first lock (`HoldFunds`)
+- `POST /v1/vault/goals/{id}/locks` — add a lock
+- `POST /v1/vault/goals/{id}/release` — unlock (whole holds, `ReleaseHold`)
+
+Until sign-in ships, the gateway (or a test) names the caller with the
+`x-amber-caller` header; this is a development configuration — do not deploy
+publicly.
 
 ## Web client (React)
 
@@ -78,6 +114,10 @@ The SPA is a thin view layer only (no financial logic, no secrets) — see
 | Variable      | Required | Default (dev)                                                        | Description                                  |
 | ------------- | -------- | -------------------------------------------------------------------- | -------------------------------------------- |
 | `DATABASE_URL`| dev-only | `postgres://amber:amber_dev@localhost:5433/amber?sslmode=disable`    | Postgres connection string (migrations + tests). In CI this points at the disposable `postgres:16` service container. |
+| `CORE_DATABASE_URL` | dev-only | `postgres://amber:amber_dev@localhost:5433/amber_core?sslmode=disable` | Core API metadata database (wallet links, vault goals). |
+| `LEDGER_ENDPOINT` | no | `http://127.0.0.1:50051` | Ledger gRPC address the Core API calls. |
+| `LEDGER_GRPC_TOKEN` | deploy | `amberpay-internal-dev` | Shared secret presented as `x-ledger-token`. Real value from the secrets manager. |
+| `CORE_API_ADDR` | no | `127.0.0.1:8080` | Core API REST listen address. |
 
 Placeholders only — no real credentials are ever committed. Production
 credentials arrive via the deployment platform (AWS Secrets Manager / SSM) when

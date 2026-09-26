@@ -136,6 +136,41 @@ export function IconPhone({ size = 16, stroke = 'var(--navy-700)' }: IconProps) 
   );
 }
 
+export function IconVault({ size = 21, stroke = 'currentColor' }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3.5" y="5" width="17" height="15" rx="2.5" />
+      <circle cx="12" cy="12.5" r="3.6" />
+      <path d="M12 10.5v-1M12 15.5v-1M14 12.5h-1M11 12.5h-1" />
+      <path d="M6 2.5h12" />
+    </svg>
+  );
+}
+
+export function IconPlus({ size = 20, stroke = 'currentColor' }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.9" strokeLinecap="round">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+export function IconArrow({ size = 20, stroke = 'currentColor' }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h13M13 6.5L18.5 12 13 17.5" />
+    </svg>
+  );
+}
+
+export function IconSpark({ size = 18, stroke = 'var(--amber-800)' }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3l1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7z" />
+    </svg>
+  );
+}
+
 export function IconBackspace({ size = 20, stroke = 'currentColor' }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

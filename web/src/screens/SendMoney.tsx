@@ -6,6 +6,7 @@ import { Money, formatMinorUnits } from '../components/Money';
 import { StatusPill } from '../components/StatusPill';
 import { Keypad, PinDots } from '../components/Keypad';
 import { ScreenState } from '../components/ScreenState';
+import { BeneficiaryPicker } from '../components/BeneficiaryPicker';
 import { useTransferSubmit } from '../hooks/useTransferSubmit';
 import { useOnline } from '../hooks/useOnline';
 
@@ -58,6 +59,10 @@ export function SendMoney() {
         <div className="faint" style={{ fontSize: '.8rem', marginBottom: 12 }}>
           Who are you paying?
         </div>
+        {/* Saved recipients come from the server's beneficiary list (§3.4).
+            It hides itself when the API isn't available — the input below
+            always works. */}
+        <BeneficiaryPicker onSelect={setRecipient} />
         <label style={{ marginBottom: 12 }}>
           Recipient phone or email
           <input

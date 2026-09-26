@@ -8,6 +8,7 @@ Index of the AmberPay checklist deliverables (§1/§78). Status: ✅ written ·
 | Architecture document | `architecture.md` | ✅ (updated: React frontend) |
 | Database schema | `schema.md` | ✅ |
 | API specification | `api.md` | ✅ |
+| Vault (goal savings) design | `vault.md` | ✅ (contract final; Core API pending) |
 | Ledger design | `architecture.md` §5 + `schema.md` + `ledger/src/` | ✅ (implemented, incl. reversals + refunds) |
 | Transaction state machine | `transaction-state-machine.md` | ✅ |
 | Authentication design | `authentication.md` | ✅ |

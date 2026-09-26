@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["ledger"]
+members = ["ledger", "core-api"]
 
 # tonic::Status is ~176 bytes, so every gRPC handler / mapper signature that
 # returns Result<_, Status> trips clippy::result_large_err. The trait contract

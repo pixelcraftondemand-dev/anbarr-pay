@@ -126,10 +126,11 @@ describe('SendMoney — review, PIN, and submission', () => {
     await waitFor(() => {
       expect(screen.getByText(/transfer confirmed/i)).toBeInTheDocument();
     });
-    // One PIN verify + one transfer POST.
-    expect(apiRequestMock).toHaveBeenCalledTimes(2);
-    expect(apiRequestMock.mock.calls[1][0]).toBe('/transfers');
-    const init = apiRequestMock.mock.calls[1][1];
+    // One PIN verify + one transfer POST (path-scoped: unrelated reads like
+    // the beneficiary picker may also fire and don't affect this assertion).
+    const transferCalls = apiRequestMock.mock.calls.filter(([p]) => p === '/transfers');
+    expect(transferCalls).toHaveLength(1);
+    const init = transferCalls[0][1];
     expect(init.body.recipient_email_or_phone).toBe('aminata@example.com');
     // Keypad typed 4,5,0,0 → 4500 minor units (SLE 45.00). The client sends
     // minor units verbatim — no fee or conversion math happens client-side.

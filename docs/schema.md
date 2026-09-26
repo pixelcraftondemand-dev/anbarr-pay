@@ -2,6 +2,13 @@
 
 PostgreSQL 15+. Two schemas with separate DB roles (`amber_ledger` owns `ledger`; `amber_app` owns `app`). The app role has **no write access** to `ledger`.
 
+> **Implementation note (core-api crate):** the Core API's first slice (wallet
+> registry + vault goals, `core-api/migrations`) ships in its own crate and,
+> in dev, its own database (`amber_core` — see docker/init-core-db.sql). That
+> is a *stronger* enforcement of the same boundary this doc specifies via
+> roles; as more `app` schema tables (users, sessions, KYC, …) are built out,
+> they migrate into the role-separated `app` schema described below.
+
 Conventions:
 - `UUID` primary keys (`gen_random_uuid()`).
 - All timestamps `TIMESTAMPTZ`, stored UTC.

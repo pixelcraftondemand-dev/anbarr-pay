@@ -6,8 +6,10 @@ import { SendMoney } from './screens/SendMoney';
 import { Topup } from './screens/Topup';
 import { Security } from './screens/Security';
 import { TransactionDetail } from './screens/TransactionDetail';
+import { Vault } from './screens/Vault';
 import { WalletDetail } from './screens/WalletDetail';
 import { Wallets } from './screens/Wallets';
+import { Beneficiaries } from './screens/Beneficiaries';
 import { Placeholder } from './screens/Placeholder';
 
 /**
@@ -25,6 +27,7 @@ export function App() {
         <Route path="/activity" element={<Activity />} />
         <Route path="/send" element={<SendMoney />} />
         <Route path="/topup" element={<Topup />} />
+        <Route path="/vault" element={<Vault />} />
         <Route path="/security" element={<Security />} />
         <Route path="/wallets" element={<Wallets />} />
         <Route path="/wallets/:id" element={<WalletDetail />} />
@@ -33,7 +36,7 @@ export function App() {
             placeholders, never fake functionality (§73). */}
         <Route path="/kyc" element={<Placeholder title="Verify your identity" />} />
         <Route path="/withdraw" element={<Placeholder title="Withdraw" />} />
-        <Route path="/beneficiaries" element={<Placeholder title="Beneficiaries" />} />
+        <Route path="/beneficiaries" element={<Beneficiaries />} />
         <Route path="/merchant" element={<Placeholder title="Merchant dashboard" />} />
         <Route path="/checkout/:id" element={<Placeholder title="Checkout" />} />
         <Route path="/pay/:linkId" element={<Placeholder title="Payment link" />} />

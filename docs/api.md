@@ -71,6 +71,31 @@ Merchant authenticates with `X-API-Key`; buyer is the customer.
 | GET | `/v1/topups/{id}` | status incl. `rail_reference` |
 | POST | `/v1/bills` | (future) bill payments — same shape as topups with `bill_provider` |
 
+## 6b. Vault (goal savings over ledger holds — see docs/vault.md)
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/v1/vault/goals` | list goals incl. open locks (hold ids, amounts, expiry) |
+| POST | `/v1/vault/goals` | create + first lock: `{name, currency, amount_minor, target_minor?, maturity_at?}` + `Pin-Token` → 201 |
+| POST | `/v1/vault/goals/{id}/locks` | add a lock: `{amount_minor}` + `Pin-Token` |
+| POST | `/v1/vault/goals/{id}/release` | unlock: `{hold_id?}` (omit = all open holds) + `Pin-Token` |
+
+Each lock maps 1:1 to a ledger `HoldFunds`; release maps to `ReleaseHold`
+(whole-hold, no partial unlock). KYC tier gates goal count and caps.
+
+## 6c. Beneficiaries
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/v1/beneficiaries` | saved recipients `{id, name, email_or_phone}` — feeds the Send flow's picker |
+| POST | `/v1/beneficiaries` | (future) add manually — sensitive action: strong auth + cooling-off (§18) |
+| PUT | `/v1/beneficiaries/{id}` | (future) edit |
+| DELETE | `/v1/beneficiaries/{id}` | (future) remove |
+
+The server derives recipients from paid transfers; the client never infers
+them from statement rows (statements carry no counterparty identity by
+design).
+
 ## 7. Agent Cash-in / Cash-out
 
 | Method | Path | Description |

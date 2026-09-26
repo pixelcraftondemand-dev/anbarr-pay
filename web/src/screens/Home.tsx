@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import type { StatementEntry, StatementPage, Wallet } from '../api/types';
 import { request } from '../api/requests';
-import { IconEye, IconLock } from '../components/Icons';
+import { IconEye, IconLock, IconShieldNote } from '../components/Icons';
 import { TxRow } from '../components/TxRow';
 import { ScreenState } from '../components/ScreenState';
 import { formatMinorUnits } from '../components/Money';
+import { VaultMiniCard } from '../components/VaultMiniCard';
 import { useOnline } from '../hooks/useOnline';
 
 type State =
@@ -15,6 +16,33 @@ type State =
   | { kind: 'ready'; wallets: Wallet[]; recent: StatementEntry[] };
 
 const RECENT_LIMIT = 20;
+
+type ServiceKey =
+  | 'send'
+  | 'topup'
+  | 'request'
+  | 'bill'
+  | 'vault'
+  | 'withdraw'
+  | 'beneficiaries'
+  | 'merchant';
+
+const SERVICES: {
+  key: ServiceKey;
+  label: string;
+  to?: string;
+  trust?: boolean;
+  soon?: string;
+}[] = [
+  { key: 'send', label: 'Send', to: '/send' },
+  { key: 'topup', label: 'Add money', to: '/topup' },
+  { key: 'request', label: 'Request', soon: 'Requests need the payments API, not connected yet.' },
+  { key: 'bill', label: 'Bills', soon: 'Billers are coming with the merchant rails.' },
+  { key: 'vault', label: 'Vault', to: '/vault', trust: true },
+  { key: 'withdraw', label: 'Withdraw', to: '/withdraw' },
+  { key: 'beneficiaries', label: 'People', to: '/beneficiaries' },
+  { key: 'merchant', label: 'Merchant', to: '/merchant' },
+];
 
 export function Home() {
   const navigate = useNavigate();
@@ -93,14 +121,7 @@ export function Home() {
             Available balance
             <button
               type="button"
-              className="icon-btn"
-              style={{
-                width: 22,
-                height: 22,
-                background: 'rgba(255,255,255,.12)',
-                border: 'none',
-                marginLeft: 'auto',
-              }}
+              className="balance-eye"
               aria-label={balanceVisible ? 'Hide balance' : 'Show balance'}
               onClick={() => setBalanceVisible((v) => !v)}
             >
@@ -116,8 +137,7 @@ export function Home() {
           </div>
           <div className="balance-sub">
             {formatMinorUnits(primary.held_minor, primary.currency)} held ·{' '}
-            {formatMinorUnits(primary.total_minor, primary.currency)} total · wallet{' '}
-            {primary.id.slice(0, 4)} · {primary.currency}
+            {formatMinorUnits(primary.total_minor, primary.currency)} total · {primary.currency}
           </div>
         </div>
       ) : (
@@ -129,98 +149,42 @@ export function Home() {
         </div>
       )}
 
-      {wallets.length > 1 && (
-        <div className="section-head">
-          <h3>Other wallets</h3>
-        </div>
-      )}
-      {wallets.slice(1).map((w) => (
-        <div key={w.id} className="tx-row">
-          <div className="tx-avatar" aria-hidden>
-            {w.currency.slice(0, 2)}
-          </div>
-          <div className="tx-mid">
-            <div className="tx-name">{w.currency} wallet</div>
-            <div className="tx-meta">
-              {formatMinorUnits(w.available_minor, w.currency)} available ·{' '}
-              {formatMinorUnits(w.held_minor, w.currency)} held
-            </div>
-          </div>
-        </div>
-      ))}
+      {/* Services grid — the OPay lesson: every destination one tap away. */}
+      <div className="services" role="navigation" aria-label="Services">
+        {SERVICES.map((svc) => {
+          const to = svc.to;
+          const disabled = !to || !online;
+          return (
+            <button
+              key={svc.key}
+              type="button"
+              className="svc"
+              aria-disabled={disabled || undefined}
+              title={svc.soon}
+              onClick={() => {
+                if (!to || !online) return;
+                navigate(to);
+              }}
+            >
+              <span className={`circ${svc.trust ? ' trust' : ''}`}>
+                <ServiceIcon service={svc.key} />
+              </span>
+              <span className="lbl">{svc.label}</span>
+            </button>
+          );
+        })}
+      </div>
 
-      <div className="quick-actions">
-        <button type="button" className="qa" onClick={() => navigate('/send')}>
-          <span className="circ">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--navy-900)"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 11.5L20 3.5 12.5 20.5 10.2 12.8 3 11.5z" />
-              <path d="M10.2 12.8L20 3.5" />
-            </svg>
-          </span>
-          <span>Send</span>
-        </button>
-        <button type="button" className="qa" onClick={() => navigate('/topup')}>
-          <span className="circ">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--navy-900)"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3.5 8.2A2.2 2.2 0 0 1 5.7 6h11.6a2.2 2.2 0 0 1 2.2 2.2v.8h1a1.5 1.5 0 0 1 1.5 1.5v6a2.2 2.2 0 0 1-2.2 2.2H5.7a2.2 2.2 0 0 1-2.2-2.2z" />
-              <path d="M15.2 13.3h4.3M17.35 11.15v4.3" />
-            </svg>
-          </span>
-          <span>Add money</span>
-        </button>
-        <button type="button" className="qa" onClick={() => navigate('/activity')}>
-          <span className="circ">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--navy-900)"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 12h4l2-7 4 14 2-7h6" />
-            </svg>
-          </span>
-          <span>Request</span>
-        </button>
-        <button type="button" className="qa" onClick={() => navigate('/activity')}>
-          <span className="circ">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--navy-900)"
-              strokeWidth="1.7"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M6 3h12v13.2l-1.5 1.4L15 16.2l-1.5 1.4L12 16.2l-1.5 1.4L9 16.2l-1.5 1.4L6 16.2z" />
-              <path d="M9 7.4h6M9 10.4h6M9 13.4h3.2" />
-            </svg>
-          </span>
-          <span>Pay bill</span>
-        </button>
+      {/* The Monime lesson: savings with intent. Locked goals ride the same
+          holds machinery as escrow — real entries, no stored balances. */}
+      <VaultMiniCard onOpenAll={() => navigate('/vault')} />
+
+      <div className="trust-strip">
+        <IconShieldNote size={15} stroke="var(--amber-800)" />
+        <span>
+          Every balance and entry here is served from the AmberPay ledger — the same immutable
+          record our reconciliation audits. No cached numbers.
+        </span>
       </div>
 
       <div className="section-head">
@@ -248,6 +212,75 @@ export function Home() {
       )}
     </div>
   );
+}
+
+function ServiceIcon({ service }: { service: ServiceKey }) {
+  const stroke = 'var(--navy-900)';
+  const c = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none' } as const;
+  switch (service) {
+    case 'send':
+      return (
+        <svg {...c} stroke={stroke} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 11.5L20 3.5 12.5 20.5 10.2 12.8 3 11.5z" />
+          <path d="M10.2 12.8L20 3.5" />
+        </svg>
+      );
+    case 'topup':
+      return (
+        <svg {...c} stroke={stroke} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3.5 8.2A2.2 2.2 0 0 1 5.7 6h11.6a2.2 2.2 0 0 1 2.2 2.2v.8h1a1.5 1.5 0 0 1 1.5 1.5v6a2.2 2.2 0 0 1-2.2 2.2H5.7a2.2 2.2 0 0 1-2.2-2.2z" />
+          <path d="M15.2 13.3h4.3M17.35 11.15v4.3" />
+        </svg>
+      );
+    case 'request':
+      return (
+        <svg {...c} stroke={stroke} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 4.2v10.3" />
+          <path d="M7.6 10.8L12 15.2l4.4-4.4" />
+          <path d="M4.2 15.6v3a2 2 0 0 0 2 2h11.6a2 2 0 0 0 2-2v-3" />
+        </svg>
+      );
+    case 'bill':
+      return (
+        <svg {...c} stroke={stroke} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 3h12v13.2l-1.5 1.4L15 16.2l-1.5 1.4L12 16.2l-1.5 1.4L9 16.2l-1.5 1.4L6 16.2z" />
+          <path d="M9 7.4h6M9 10.4h6M9 13.4h3.2" />
+        </svg>
+      );
+    case 'vault':
+      return (
+        <svg {...c} stroke="var(--amber-600)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3.5" y="5" width="17" height="15" rx="2.5" />
+          <circle cx="12" cy="12.5" r="3.6" />
+          <path d="M12 10.5v-1M12 15.5v-1M14 12.5h-1M11 12.5h-1" />
+        </svg>
+      );
+    case 'withdraw':
+      return (
+        <svg {...c} stroke={stroke} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 19V6.5" />
+          <path d="M6.5 13.5L12 19l5.5-5.5" />
+          <path d="M4.5 20.5h15" />
+        </svg>
+      );
+    case 'beneficiaries':
+      return (
+        <svg {...c} stroke={stroke} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="9" cy="8.5" r="3.2" />
+          <path d="M3.5 19.5c0-3 2.5-5 5.5-5s5.5 2 5.5 5" />
+          <circle cx="16.5" cy="9.5" r="2.6" />
+          <path d="M16.5 14.5c2.5 0 4.5 1.8 4.5 4.5" />
+        </svg>
+      );
+    case 'merchant':
+      return (
+        <svg {...c} stroke={stroke} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 9.5L6 4h12l2 5.5" />
+          <path d="M4 9.5h16V19a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19z" />
+          <path d="M9.5 20.5v-6h5v6" />
+        </svg>
+      );
+  }
 }
 
 function greetingNow(): string {

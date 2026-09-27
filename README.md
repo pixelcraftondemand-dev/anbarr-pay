@@ -10,7 +10,11 @@ with separate database roles, not convention.
 > pass `cargo fmt --check` and `cargo clippy -- -D warnings`; correctness
 > logic targets **85%+ coverage**; every PR must pass CI and get one review
 > before merging to `main` (branch protection is configured in GitHub Settings
-> — see [Branch protection](#branch-protection)).
+> — see [Branch protection](#branch-protection)). The binding rules —
+> maintainable-code invariants, which tests matter, commit format, and the
+> AI-first review process — live in
+> [`docs/engineering-standards.md`](docs/engineering-standards.md); AI agents
+> are additionally bound by [`AGENTS.md`](AGENTS.md).
 
 ---
 
@@ -155,6 +159,21 @@ pre-commit install
 Hooks run `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`,
 and the quick unit/property test suite before every commit. Integration tests
 need a database, so they run in CI instead of the hook.
+
+## Branch model
+
+```
+feat/<goal>-<slug>  →  staging  →  main
+     (work)            (AI review)  (release)
+```
+
+- **`staging`** — integration branch: feature branches PR here, CI runs on
+  every push, and the **AI code review happens on staging PRs**.
+- **`main`** — release branch: receives PRs from staging only, requires
+  human review for financial/auth/infra changes, always deployable.
+- Direct pushes to either are blocked (branch protection, GitHub Settings).
+
+Details: `docs/engineering-standards.md` §4.
 
 ## CI/CD
 

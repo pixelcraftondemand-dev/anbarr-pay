@@ -2,7 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # main = release (protected, PRs only); staging = pre-review integration
+    # where feature branches land first and the AI review runs (see
+    # docs/engineering-standards.md §4).
+    branches: [main, staging]
   pull_request:
 
 concurrency:

@@ -5,12 +5,12 @@
 //! (Σ open locks) maintained in the same core-DB transaction that records
 //! the lock/release rows; the ledger's holds stay the authority.
 
+use crate::auth::Caller;
 use crate::error::ApiError;
 use crate::ledger::pb;
 use crate::wallets::{get_account, primary_wallet};
-use crate::{ApiResult, AppState, CALLER_HEADER};
+use crate::{ApiResult, AppState};
 use axum::extract::{Path, State};
-use axum::http::HeaderMap;
 use axum::Json;
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
@@ -83,15 +83,17 @@ pub struct ReleaseResponse {
     pub released_holds: i64,
 }
 
-fn caller_from(headers: &HeaderMap) -> Result<String, ApiError> {
-    headers
-        .get(CALLER_HEADER)
-        .and_then(|v| v.to_str().ok())
-        .map(str::trim)
-        .filter(|v| !v.is_empty())
-        .map(|c| c.to_string())
-        .ok_or(ApiError::Unauthorized)
-}
+/// Goal row fields for listing: id, name, currency, target, maturity, status.
+type GoalRow = (
+    Uuid,
+    String,
+    String,
+    Option<i64>,
+    Option<DateTime<Utc>>,
+    String,
+);
+/// Lock row fields: hold_id, amount, locked_at, released_at.
+type LockRow = (Uuid, i64, DateTime<Utc>, Option<DateTime<Utc>>);
 
 fn validate_name(name: &str) -> Result<(), ApiError> {
     let trimmed = name.trim();
@@ -199,10 +201,10 @@ async fn ledger_release_hold(
 /// (recovered by reconciliation against `holds`), never a phantom goal.
 pub async fn create_goal(
     State(state): State<AppState>,
-    headers: HeaderMap,
+    caller: Caller,
     Json(req): Json<CreateGoalRequest>,
 ) -> ApiResult<Json<CreateGoalResponse>> {
-    let caller = caller_from(&headers)?;
+    let caller = caller.user_id.to_string();
     validate_name(&req.name)?;
     validate_amount(req.amount_minor)?;
     let currency = validate_currency(&req.currency)?;
@@ -276,18 +278,11 @@ pub async fn create_goal(
 /// `locked_minor` is recomputed from open lock rows on read.
 pub async fn list_goals(
     State(state): State<AppState>,
-    headers: HeaderMap,
+    caller: Caller,
 ) -> ApiResult<Json<Vec<GoalResponse>>> {
-    let caller = caller_from(&headers)?;
+    let caller = caller.user_id.to_string();
 
-    let goals: Vec<(
-        Uuid,
-        String,
-        String,
-        Option<i64>,
-        Option<DateTime<Utc>>,
-        String,
-    )> = sqlx::query_as(
+    let goals: Vec<GoalRow> = sqlx::query_as(
         "SELECT id, name, currency, target_minor, maturity_at, status
              FROM vault_goals WHERE caller = $1 ORDER BY created_at DESC",
     )
@@ -297,7 +292,7 @@ pub async fn list_goals(
 
     let mut out = Vec::with_capacity(goals.len());
     for (id, name, currency, target_minor, maturity_at, status) in goals {
-        let locks: Vec<(Uuid, i64, DateTime<Utc>, Option<DateTime<Utc>>)> = sqlx::query_as(
+        let locks: Vec<LockRow> = sqlx::query_as(
             "SELECT hold_id, amount_minor, locked_at, released_at
              FROM vault_goal_locks WHERE goal_id = $1 ORDER BY locked_at",
         )
@@ -334,11 +329,11 @@ pub async fn list_goals(
 /// POST /v1/vault/goals/:id/locks — add a lock to an active goal.
 pub async fn add_lock(
     State(state): State<AppState>,
+    caller: Caller,
     Path(goal_id): Path<Uuid>,
-    headers: HeaderMap,
     Json(req): Json<AddLockRequest>,
 ) -> ApiResult<Json<AddLockResponse>> {
-    let caller = caller_from(&headers)?;
+    let caller = caller.user_id.to_string();
     validate_amount(req.amount_minor)?;
 
     let (currency, status): (String, String) =
@@ -369,8 +364,10 @@ pub async fn add_lock(
     .await?;
     tx.commit().await?;
 
+    // SUM(bigint) is NUMERIC in Postgres — cast to bigint so sqlx can
+    // decode it into i64.
     let locked_minor: i64 = sqlx::query_scalar(
-        "SELECT COALESCE(SUM(amount_minor), 0) FROM vault_goal_locks
+        "SELECT COALESCE(SUM(amount_minor), 0)::bigint FROM vault_goal_locks
          WHERE goal_id = $1 AND released_at IS NULL",
     )
     .bind(goal_id)
@@ -389,11 +386,11 @@ pub async fn add_lock(
 /// written, so the read-model never diverges from a successful release.
 pub async fn release_goal(
     State(state): State<AppState>,
+    caller: Caller,
     Path(goal_id): Path<Uuid>,
-    headers: HeaderMap,
     Json(req): Json<ReleaseRequest>,
 ) -> ApiResult<Json<ReleaseResponse>> {
-    let caller = caller_from(&headers)?;
+    let caller = caller.user_id.to_string();
 
     // Goal must belong to the caller (authorization: ownership check).
     let owned: i64 =

@@ -11,13 +11,21 @@
 //! - `db` — core-database pool + migrations (`core-api/migrations`)
 //! - `ledger` — tonic client wrapper for the ledger gRPC service
 //! - `error` — problem+json error contract (docs/api.md preamble)
+//! - `auth` — OTP sign-in + sessions (goal 1, docs/authentication.md)
+//! - `pin` — transaction PIN + step-up (goal 2, docs/authentication.md §5)
+//! - `jobs` — app-layer audit log (docs/security-controls.md §4)
 //! - `wallets` — wallet registry (links a caller to a verified ledger account)
 //! - `vault` — goal savings: metadata + lock/release via ledger holds
+//! - `transfers` — P2P transfers (goal 3) via the ledger gRPC payment path
 
 pub mod ai;
+pub mod auth;
 pub mod db;
 pub mod error;
+pub mod jobs;
 pub mod ledger;
+pub mod pin;
+pub mod transfers;
 pub mod vault;
 pub mod wallets;
 
@@ -99,33 +107,51 @@ impl AppState {
     }
 }
 
-/// The caller-resolution header (docs/vault.md §4): until sign-in ships,
-/// the gateway (or tests) name the caller explicitly. With auth absent this
-/// is a development configuration — do not deploy publicly.
-pub const CALLER_HEADER: &str = "x-amber-caller";
-
 /// All routes in one router (mounted by `main` and by the tests). Handlers
 /// return `Result<Json<T>, ApiError>`; `ApiError: IntoResponse` renders the
 /// problem+json body (docs/api.md preamble) — no middleware layer needed.
+///
+/// Paths follow the client contract (`web/src/api/*` + docs/api.md): the web
+/// client's base is `/v1` and it calls `/wallets`, `/vault/goals`,
+/// `/transfers`, `/auth/*` — the `/v1/ledger/*` prefixes were the old dev-era
+/// surface and broke that contract.
 pub fn create_app(state: AppState) -> axum::Router {
     axum::Router::new()
-        .route("/v1/ledger", axum::routing::post(ai::chat))
+        // --- Authentication & sessions (docs/authentication.md) ------------
         .route(
-            "/v1/ledger/wallets",
+            "/v1/auth/otp/request",
+            axum::routing::post(auth::request_otp),
+        )
+        .route("/v1/auth/otp/verify", axum::routing::post(auth::verify_otp))
+        .route("/v1/auth/signin", axum::routing::post(auth::verify_otp))
+        .route("/v1/auth/refresh", axum::routing::post(auth::refresh))
+        .route("/v1/auth/logout", axum::routing::post(auth::logout))
+        // --- Transaction PIN (docs/authentication.md §5) -------------------
+        .route("/v1/auth/pin/set", axum::routing::post(pin::set_pin))
+        .route("/v1/auth/pin/verify", axum::routing::post(pin::verify_pin))
+        // --- Wallets & vault -----------------------------------------------
+        .route(
+            "/v1/wallets",
             axum::routing::get(wallets::list_wallets).post(wallets::link_wallet),
         )
         .route(
-            "/v1/ledger/vault/goals",
+            "/v1/vault/goals",
             axum::routing::get(vault::list_goals).post(vault::create_goal),
         )
         .route(
-            "/v1/ledger/vault/goals/:id/locks",
+            "/v1/vault/goals/:id/locks",
             axum::routing::post(vault::add_lock),
         )
         .route(
-            "/v1/ledger/vault/goals/:id/release",
+            "/v1/vault/goals/:id/release",
             axum::routing::post(vault::release_goal),
         )
+        // --- Transfers (goal 3) & the AI assistant --------------------------
+        .route(
+            "/v1/transfers",
+            axum::routing::post(transfers::create_transfer),
+        )
+        .route("/v1/ai/chat", axum::routing::post(ai::chat))
         .with_state(state)
 }
 

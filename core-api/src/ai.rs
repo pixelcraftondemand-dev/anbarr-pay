@@ -1,3 +1,4 @@
+use crate::auth::Caller;
 use crate::error::ApiError;
 use crate::{ApiResult, AppState};
 use axum::{extract::State, Json};
@@ -37,9 +38,11 @@ struct OllamaResponseMessage {
     content: String,
 }
 
-/// POST /v1/ai/chat
+/// POST /v1/ai/chat — authenticated assistant endpoint. Money questions get
+/// grounded answers only; the assistant never sees tokens or secrets.
 pub async fn chat(
     State(state): State<AppState>,
+    _caller: Caller,
     Json(req): Json<ChatRequest>,
 ) -> ApiResult<Json<ChatResponse>> {
     let message = req.message.trim();

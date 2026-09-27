@@ -170,6 +170,9 @@ feat/<goal>-<slug>  →  staging  →  main
   human reviews the AI review too — findings skipped without rebuttal
   invalidate the approval.
 
+The verbatim prompt a reviewer agent runs — gates, checklists, finding
+format, verdict table — lives in [`docs/ai-review-prompt.md`](ai-review-prompt.md).
+
 ### What an AI reviewer must actually do
 
 1. **Run, don't assume:** `cargo fmt --check`, `cargo clippy --all-targets

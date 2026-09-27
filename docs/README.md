@@ -6,6 +6,7 @@ Index of the AmberPay checklist deliverables (§1/§78). Status: ✅ written ·
 | Deliverable | Doc | Status |
 |---|---|---|
 | Engineering standards (code, tests, commits, AI review) | `engineering-standards.md` | ✅ |
+| AI review prompt (staging PRs) | `ai-review-prompt.md` | ✅ |
 | Architecture document | `architecture.md` | ✅ (updated: React frontend) |
 | Database schema | `schema.md` | ✅ |
 | API specification | `api.md` | ✅ |

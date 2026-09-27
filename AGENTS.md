@@ -76,7 +76,8 @@ failure mode.
     (engineering-standards §4).
 12. **Findings in severity format** (Blocker / Should / Nit), each with
     evidence — a command output, a doc quote, or a specific invariant. "I
-    feel this could be cleaner" is not a finding.
+    feel this could be cleaner" is not a finding. The verbatim review
+    prompt: `docs/ai-review-prompt.md`.
 13. **Money-path review = run the checklist:** ordering, idempotency,
     ownership, error contract, mandatory tests present, blast radius on
     `web/src/api/client.ts` and `docs/api.md`. If you can't run the DB,

@@ -163,9 +163,9 @@ pub(crate) async fn get_account(
         .get_account(req)
         .await
         .map_err(|s| match s.code() {
-            tonic::Code::NotFound => ApiError::NotFound(format!(
-                "account {account_id} does not exist on the ledger"
-            )),
+            tonic::Code::NotFound => {
+                ApiError::NotFound(format!("account {account_id} does not exist on the ledger"))
+            }
             _ => ApiError::from(s),
         })?
         .into_inner();

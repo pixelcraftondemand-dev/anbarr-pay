@@ -14,8 +14,8 @@
 //! - `wallets` — wallet registry (links a caller to a verified ledger account)
 //! - `vault` — goal savings: metadata + lock/release via ledger holds
 
-pub mod db;
 pub mod ai;
+pub mod db;
 pub mod error;
 pub mod ledger;
 pub mod vault;
@@ -109,10 +109,7 @@ pub const CALLER_HEADER: &str = "x-amber-caller";
 /// problem+json body (docs/api.md preamble) — no middleware layer needed.
 pub fn create_app(state: AppState) -> axum::Router {
     axum::Router::new()
-        .route(
-            "/v1/ledger",
-            axum::routing::post(ai::chat),
-        )
+        .route("/v1/ledger", axum::routing::post(ai::chat))
         .route(
             "/v1/ledger/wallets",
             axum::routing::get(wallets::list_wallets).post(wallets::link_wallet),
@@ -121,7 +118,10 @@ pub fn create_app(state: AppState) -> axum::Router {
             "/v1/ledger/vault/goals",
             axum::routing::get(vault::list_goals).post(vault::create_goal),
         )
-        .route("/v1/ledger/vault/goals/:id/locks", axum::routing::post(vault::add_lock))
+        .route(
+            "/v1/ledger/vault/goals/:id/locks",
+            axum::routing::post(vault::add_lock),
+        )
         .route(
             "/v1/ledger/vault/goals/:id/release",
             axum::routing::post(vault::release_goal),
@@ -131,4 +131,3 @@ pub fn create_app(state: AppState) -> axum::Router {
 
 /// Convenience alias used by handlers.
 pub type ApiResult<T> = Result<T, ApiError>;
-

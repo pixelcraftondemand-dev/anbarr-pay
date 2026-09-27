@@ -96,9 +96,7 @@ fn caller_from(headers: &HeaderMap) -> Result<String, ApiError> {
 fn validate_name(name: &str) -> Result<(), ApiError> {
     let trimmed = name.trim();
     if trimmed.len() < 2 || trimmed.chars().count() > 60 {
-        return Err(ApiError::Validation(
-            "name must be 2–60 characters".into(),
-        ));
+        return Err(ApiError::Validation("name must be 2–60 characters".into()));
     }
     Ok(())
 }
@@ -159,8 +157,7 @@ async fn ledger_hold_funds(
         .await
         .map_err(ApiError::from)?
         .into_inner();
-    let hold_id = Uuid::parse_str(&resp.hold_id)
-        .map_err(|_| ApiError::Internal)?;
+    let hold_id = Uuid::parse_str(&resp.hold_id).map_err(|_| ApiError::Internal)?;
     tracing::info!(caller, %wallet, %hold_id, amount_minor, "vault lock posted");
     Ok(hold_id)
 }
@@ -174,17 +171,19 @@ async fn ledger_release_hold(
     caller: &str,
 ) -> Result<(), ApiError> {
     let mut client = state.ledger.client();
-    let req = state.ledger.prepare(tonic::Request::new(pb::ReleaseRequest {
-        idempotency_scope: IDEMPOTENCY_SCOPE.to_string(),
-        idempotency_key: Uuid::new_v4().to_string(),
-        hold_id: hold_id.to_string(),
-        origin: Some(pb::Origin {
-            user_id: String::new(),
-            channel: "core-api".to_string(),
-            session_id: String::new(),
-            payment_code: String::new(),
-        }),
-    }));
+    let req = state
+        .ledger
+        .prepare(tonic::Request::new(pb::ReleaseRequest {
+            idempotency_scope: IDEMPOTENCY_SCOPE.to_string(),
+            idempotency_key: Uuid::new_v4().to_string(),
+            hold_id: hold_id.to_string(),
+            origin: Some(pb::Origin {
+                user_id: String::new(),
+                channel: "core-api".to_string(),
+                session_id: String::new(),
+                payment_code: String::new(),
+            }),
+        }));
     client
         .release_hold(req)
         .await
@@ -229,9 +228,15 @@ pub async fn create_goal(
     }
 
     let goal_id = Uuid::new_v4();
-    let hold_id =
-        ledger_hold_funds(&state, wallet, req.amount_minor, &currency, req.maturity_at, &caller)
-            .await?;
+    let hold_id = ledger_hold_funds(
+        &state,
+        wallet,
+        req.amount_minor,
+        &currency,
+        req.maturity_at,
+        &caller,
+    )
+    .await?;
 
     // Persist metadata after the money move (crash-safe ordering, see above).
     let mut tx = state.pool.begin().await?;
@@ -275,14 +280,20 @@ pub async fn list_goals(
 ) -> ApiResult<Json<Vec<GoalResponse>>> {
     let caller = caller_from(&headers)?;
 
-    let goals: Vec<(Uuid, String, String, Option<i64>, Option<DateTime<Utc>>, String)> =
-        sqlx::query_as(
-            "SELECT id, name, currency, target_minor, maturity_at, status
+    let goals: Vec<(
+        Uuid,
+        String,
+        String,
+        Option<i64>,
+        Option<DateTime<Utc>>,
+        String,
+    )> = sqlx::query_as(
+        "SELECT id, name, currency, target_minor, maturity_at, status
              FROM vault_goals WHERE caller = $1 ORDER BY created_at DESC",
-        )
-        .bind(&caller)
-        .fetch_all(&state.pool)
-        .await?;
+    )
+    .bind(&caller)
+    .fetch_all(&state.pool)
+    .await?;
 
     let mut out = Vec::with_capacity(goals.len());
     for (id, name, currency, target_minor, maturity_at, status) in goals {
@@ -330,28 +341,20 @@ pub async fn add_lock(
     let caller = caller_from(&headers)?;
     validate_amount(req.amount_minor)?;
 
-    let (currency, status): (String, String) = sqlx::query_as(
-        "SELECT currency, status FROM vault_goals WHERE id = $1 AND caller = $2",
-    )
-    .bind(goal_id)
-    .bind(&caller)
-    .fetch_optional(&state.pool)
-    .await?
-    .ok_or(ApiError::NotFound("goal not found".to_string()))?;
+    let (currency, status): (String, String) =
+        sqlx::query_as("SELECT currency, status FROM vault_goals WHERE id = $1 AND caller = $2")
+            .bind(goal_id)
+            .bind(&caller)
+            .fetch_optional(&state.pool)
+            .await?
+            .ok_or(ApiError::NotFound("goal not found".to_string()))?;
     if status != "active" {
         return Err(ApiError::Conflict("goal is no longer active".to_string()));
     }
 
     let wallet = primary_wallet(&state, &caller).await?;
-    let hold_id = ledger_hold_funds(
-        &state,
-        wallet,
-        req.amount_minor,
-        &currency,
-        None,
-        &caller,
-    )
-    .await?;
+    let hold_id =
+        ledger_hold_funds(&state, wallet, req.amount_minor, &currency, None, &caller).await?;
 
     let mut tx = state.pool.begin().await?;
     sqlx::query(
@@ -393,13 +396,12 @@ pub async fn release_goal(
     let caller = caller_from(&headers)?;
 
     // Goal must belong to the caller (authorization: ownership check).
-    let owned: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM vault_goals WHERE id = $1 AND caller = $2",
-    )
-    .bind(goal_id)
-    .bind(&caller)
-    .fetch_one(&state.pool)
-    .await?;
+    let owned: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM vault_goals WHERE id = $1 AND caller = $2")
+            .bind(goal_id)
+            .bind(&caller)
+            .fetch_one(&state.pool)
+            .await?;
     if owned == 0 {
         return Err(ApiError::NotFound("goal not found".to_string()));
     }
@@ -407,21 +409,25 @@ pub async fn release_goal(
     // Choose the open holds to release. Release is idempotent at the ledger
     // (idempotency_keys replay), so a crash mid-loop is retried safely.
     let holds: Vec<(Uuid, i64)> = match req.hold_id {
-        Some(hold_id) => sqlx::query_as(
-            "SELECT hold_id, amount_minor FROM vault_goal_locks
+        Some(hold_id) => {
+            sqlx::query_as(
+                "SELECT hold_id, amount_minor FROM vault_goal_locks
              WHERE goal_id = $1 AND hold_id = $2 AND released_at IS NULL",
-        )
-        .bind(goal_id)
-        .bind(hold_id)
-        .fetch_all(&state.pool)
-        .await?,
-        None => sqlx::query_as(
-            "SELECT hold_id, amount_minor FROM vault_goal_locks
+            )
+            .bind(goal_id)
+            .bind(hold_id)
+            .fetch_all(&state.pool)
+            .await?
+        }
+        None => {
+            sqlx::query_as(
+                "SELECT hold_id, amount_minor FROM vault_goal_locks
              WHERE goal_id = $1 AND released_at IS NULL ORDER BY locked_at",
-        )
-        .bind(goal_id)
-        .fetch_all(&state.pool)
-        .await?,
+            )
+            .bind(goal_id)
+            .fetch_all(&state.pool)
+            .await?
+        }
     };
     if holds.is_empty() {
         return Err(ApiError::Conflict(

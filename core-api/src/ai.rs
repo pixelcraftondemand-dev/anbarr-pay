@@ -66,9 +66,7 @@ pub async fn chat(
         .json(&request)
         .send()
         .await
-        .map_err(|e| {
-            ApiError::Unavailable(format!("Ollama request failed: {e}"))
-        })?;
+        .map_err(|e| ApiError::Unavailable(format!("Ollama request failed: {e}")))?;
 
     if !response.status().is_success() {
         let status = response.status();
@@ -82,9 +80,7 @@ pub async fn chat(
     let ollama_response: OllamaResponse = response
         .json()
         .await
-        .map_err(|e| {
-            ApiError::Unavailable(format!("Invalid Ollama response: {e}"))
-        })?;
+        .map_err(|e| ApiError::Unavailable(format!("Invalid Ollama response: {e}")))?;
 
     Ok(Json(ChatResponse {
         message: ollama_response.message.content,

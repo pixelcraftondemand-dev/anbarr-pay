@@ -21,7 +21,7 @@ tracing = "0.1"
 uuid = { version = "1", features = ["v4", "serde"] }
 
 # The generated ledger protobuf client (same contract, no duplicate .proto).
-amber-ledger = { path = "../ledger" }
+anbarr-ledger = { path = "../ledger" }
 reqwest = { version = "0.13.5", features = ["json", "rustls"] }
 
 [dev-dependencies]

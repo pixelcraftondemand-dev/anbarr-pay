@@ -1,7 +1,7 @@
 # Amber Pay — Ledger Service (Rust)
 
 The double-entry ledger engine for **AMBER PAY** (Sierra Leone; SLE primary, USD
-secondary). This crate (`amber-ledger`) is the correctness-critical money path:
+secondary). This crate (`anbarr-ledger`) is the correctness-critical money path:
 journal posting, holds, idempotency, derived balances, fee math, and rail
 reconciliation. Only this service ever writes to the ledger tables — enforced
 with separate database roles, not convention.
@@ -22,7 +22,7 @@ with separate database roles, not convention.
 
 ```
 Cargo.toml                workspace root
-ledger/                   the amber-ledger crate
+ledger/                   the anbarr-ledger crate
   src/engine.rs           posting engine: journals, holds, reversals/refunds, idempotency, funds rule
   src/balances.rs         derived balances (available / held / total), snapshots, audit
   src/money.rs            integer minor units, banker's-rounding fee math
@@ -83,7 +83,7 @@ through the ledger's gRPC contract — it never writes ledger tables.
 docker exec amber-postgres psql -U amber -c 'CREATE DATABASE amber_core'
 
 # 1. Start the ledger gRPC server (terminal 1)
-cargo run -p amber-ledger
+cargo run -p anbarr-ledger
 
 # 2. Start the Core API (terminal 2) — REST on :8080
 cargo run -p anbarr-core-api

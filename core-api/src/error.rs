@@ -70,7 +70,9 @@ impl From<tonic::Status> for ApiError {
         match status.code() {
             tonic::Code::InvalidArgument => ApiError::Validation(status.message().to_string()),
             tonic::Code::NotFound => ApiError::NotFound(status.message().to_string()),
-            tonic::Code::FailedPrecondition => ApiError::Unprocessable(status.message().to_string()),
+            tonic::Code::FailedPrecondition => {
+                ApiError::Unprocessable(status.message().to_string())
+            }
             tonic::Code::AlreadyExists => ApiError::Conflict(status.message().to_string()),
             tonic::Code::PermissionDenied | tonic::Code::Unauthenticated => ApiError::Unauthorized,
             tonic::Code::Unavailable | tonic::Code::DeadlineExceeded => {

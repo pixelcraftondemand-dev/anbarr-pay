@@ -18,33 +18,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
-name = "amber-ledger"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum",
- "chrono",
- "proptest",
- "prost",
- "prost-types",
- "protox",
- "serde",
- "serde_json",
- "sqlx",
- "thiserror 2.0.20",
- "tokio",
- "tokio-stream",
- "tonic",
- "tonic-build",
- "tower 0.5.3",
- "uuid",
-]
-
-[[package]]
 name = "anbarr-core-api"
 version = "0.1.0"
 dependencies = [
- "amber-ledger",
+ "anbarr-ledger",
  "anyhow",
  "axum",
  "chrono",
@@ -59,6 +36,32 @@ dependencies = [
  "tonic",
  "tower 0.5.3",
  "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "anbarr-ledger"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "chrono",
+ "hex",
+ "hmac",
+ "proptest",
+ "prost",
+ "prost-types",
+ "protox",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sqlx",
+ "thiserror 2.0.20",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+ "tonic-build",
+ "tower 0.5.3",
  "uuid",
 ]
 

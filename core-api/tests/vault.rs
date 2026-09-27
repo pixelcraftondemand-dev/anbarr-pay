@@ -5,11 +5,11 @@
 //!
 //! Requires the dev database (docker-compose.yml).
 
+use anbarr_ledger::db;
+use anbarr_ledger::engine::LedgerEngine;
+use anbarr_ledger::grpc::LedgerGrpc;
 use anbarr_core_api::ledger::pb::ledger_server::LedgerServer;
 use anbarr_core_api::{create_app, AppState, LedgerClient};
-use amber_ledger::db;
-use amber_ledger::engine::LedgerEngine;
-use amber_ledger::grpc::LedgerGrpc;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use serde_json::{json, Value};
@@ -54,7 +54,9 @@ async fn ledger_stack() -> (PgPool, LedgerClient) {
         .connect(&schema_url)
         .await
         .expect("connect ledger pool");
-    amber_ledger::db::run_migrations(&pool).await.expect("ledger migrations");
+    anbarr_ledger::db::run_migrations(&pool)
+        .await
+        .expect("ledger migrations");
 
     // Fresh ledger state (platform accounts are preserved, as in ledger tests).
     sqlx::query(
@@ -88,7 +90,7 @@ async fn ledger_stack() -> (PgPool, LedgerClient) {
             let channel = tonic::transport::Channel::from_shared(addr_uri.clone())
                 .expect("uri")
                 .connect_lazy();
-            let inner = amber_ledger::grpc_proto::ledger_client::LedgerClient::new(channel);
+            let inner = anbarr_ledger::grpc_proto::ledger_client::LedgerClient::new(channel);
             let candidate = LedgerClient::new(inner, "test-token".to_string());
             match candidate
                 .health_check(std::time::Duration::from_millis(100))
@@ -131,7 +133,9 @@ async fn core_pool() -> PgPool {
         .connect("postgres://amber:amber_dev@localhost:5433/amber_core_test?sslmode=disable")
         .await
         .expect("connect core test db");
-    anbarr_core_api::db::run_migrations(&pool).await.expect("core migrations");
+    anbarr_core_api::db::run_migrations(&pool)
+        .await
+        .expect("core migrations");
     sqlx::query("TRUNCATE wallet_links, vault_goals, vault_goal_locks CASCADE")
         .execute(&pool)
         .await
@@ -163,7 +167,9 @@ async fn request_json(
     };
     let resp = app.clone().oneshot(req).await.unwrap();
     let status = resp.status();
-    let bytes = axum::body::to_bytes(resp.into_body(), 1 << 20).await.unwrap();
+    let bytes = axum::body::to_bytes(resp.into_body(), 1 << 20)
+        .await
+        .unwrap();
     let value = if bytes.is_empty() {
         Value::Null
     } else {
@@ -176,10 +182,10 @@ async fn request_json(
 /// ledger tests' common harness, local to this binary).
 async fn create_funded_wallet(
     pool: &PgPool,
-    currency: amber_ledger::money::Currency,
+    currency: anbarr_ledger::money::Currency,
     amount: i64,
 ) -> Uuid {
-    use amber_ledger::types::{Direction, JournalSpec, JournalType, Leg, Origin};
+    use anbarr_ledger::types::{Direction, JournalSpec, JournalType, Leg, Origin};
     let wallet = Uuid::new_v4();
     sqlx::query(
         "INSERT INTO accounts (id, owner_type, owner_id, type, currency, name, status)
@@ -233,11 +239,17 @@ async fn vault_goal_lifecycle_end_to_end() {
     let core = core_pool().await;
     let app = app(core, ledger.clone());
 
-    let wallet = create_funded_wallet(&pool, amber_ledger::money::Currency::SLE, 500_000).await;
+    let wallet = create_funded_wallet(&pool, anbarr_ledger::money::Currency::SLE, 500_000).await;
 
     // 1. Link the wallet (verified against the ledger before storing).
-    let (status, body) =
-        request_json(&app, "POST", "/v1/wallets", CALLER, Some(json!({ "account_id": wallet, "label": "Main", "primary": true }))).await;
+    let (status, body) = request_json(
+        &app,
+        "POST",
+        "/v1/wallets",
+        CALLER,
+        Some(json!({ "account_id": wallet, "label": "Main", "primary": true })),
+    )
+    .await;
     assert_eq!(status, StatusCode::OK, "{body}");
     assert_eq!(body["available_minor"], 500_000);
 
@@ -310,10 +322,16 @@ async fn vault_goal_insufficient_funds_is_422_and_no_goal_row() {
     let core = core_pool().await;
     let app = app(core, ledger.clone());
 
-    let wallet = create_funded_wallet(&pool, amber_ledger::money::Currency::SLE, 100_000).await;
+    let wallet = create_funded_wallet(&pool, anbarr_ledger::money::Currency::SLE, 100_000).await;
 
-    let (status, _) =
-        request_json(&app, "POST", "/v1/wallets", CALLER, Some(json!({ "account_id": wallet, "primary": true }))).await;
+    let (status, _) = request_json(
+        &app,
+        "POST",
+        "/v1/wallets",
+        CALLER,
+        Some(json!({ "account_id": wallet, "primary": true })),
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
 
     // Ask for more than the wallet holds: the ledger's funds rule fires.
@@ -338,10 +356,16 @@ async fn vault_goal_currency_mismatch_is_400() {
     let core = core_pool().await;
     let app = app(core, ledger.clone());
 
-    let wallet = create_funded_wallet(&pool, amber_ledger::money::Currency::SLE, 100_000).await;
+    let wallet = create_funded_wallet(&pool, anbarr_ledger::money::Currency::SLE, 100_000).await;
 
-    let (status, _) =
-        request_json(&app, "POST", "/v1/wallets", CALLER, Some(json!({ "account_id": wallet, "primary": true }))).await;
+    let (status, _) = request_json(
+        &app,
+        "POST",
+        "/v1/wallets",
+        CALLER,
+        Some(json!({ "account_id": wallet, "primary": true })),
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
 
     let (status, body) = request_json(
@@ -361,10 +385,16 @@ async fn vault_goal_ownership_is_enforced() {
     let core = core_pool().await;
     let app = app(core, ledger.clone());
 
-    let wallet = create_funded_wallet(&pool, amber_ledger::money::Currency::SLE, 400_000).await;
+    let wallet = create_funded_wallet(&pool, anbarr_ledger::money::Currency::SLE, 400_000).await;
 
-    let (status, _) =
-        request_json(&app, "POST", "/v1/wallets", CALLER, Some(json!({ "account_id": wallet, "primary": true }))).await;
+    let (status, _) = request_json(
+        &app,
+        "POST",
+        "/v1/wallets",
+        CALLER,
+        Some(json!({ "account_id": wallet, "primary": true })),
+    )
+    .await;
     assert_eq!(status, StatusCode::OK);
 
     let (_, body) = request_json(
@@ -375,10 +405,7 @@ async fn vault_goal_ownership_is_enforced() {
         Some(json!({ "name": "Mine", "currency": "SLE", "amount_minor": 50_000 })),
     )
     .await;
-    assert!(
-        body["id"].is_string(),
-        "goal creation failed: {body}"
-    );
+    assert!(body["id"].is_string(), "goal creation failed: {body}");
     let goal_id = body["id"].as_str().unwrap().to_string();
 
     // A foreign caller sees no goals.

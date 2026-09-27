@@ -25,10 +25,8 @@ async fn main() -> anyhow::Result<()> {
         std::env::var("LEDGER_ENDPOINT").unwrap_or_else(|_| "http://127.0.0.1:50051".to_string());
     let ledger_token =
         std::env::var("LEDGER_GRPC_TOKEN").unwrap_or_else(|_| "amberpay-internal-dev".to_string());
-    let channel = tonic::transport::Channel::from_shared(ledger_endpoint.clone())?
-        .connect_lazy();
-    let inner =
-        anbarr_core_api::ledger::pb::ledger_client::LedgerClient::new(channel);
+    let channel = tonic::transport::Channel::from_shared(ledger_endpoint.clone())?.connect_lazy();
+    let inner = anbarr_core_api::ledger::pb::ledger_client::LedgerClient::new(channel);
     let ledger = LedgerClient::new(inner, ledger_token);
 
     let addr = std::env::var("CORE_API_ADDR")
@@ -50,13 +48,7 @@ async fn main() -> anyhow::Result<()> {
         .timeout(Duration::from_secs(60))
         .build()?;
 
-    let state = AppState::new(
-        pool,
-        ledger,
-        http_client,
-        ollama_url,
-        ollama_model,
-    );
+    let state = AppState::new(pool, ledger, http_client, ollama_url, ollama_model);
     let app = create_app(state);
 
     let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel::<()>();

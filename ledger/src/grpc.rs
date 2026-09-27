@@ -15,7 +15,7 @@ use crate::engine::{
     ReversalRequest,
 };
 // tonic-build generates a flat namespace: the `grpc_proto` module *is*
-// `amber.ledger.v1`.
+// `anbarr.ledger.v1`.
 use crate::grpc_proto as pb;
 use crate::grpc_proto::ledger_server::Ledger;
 use crate::money::Currency;
@@ -27,10 +27,27 @@ use uuid::Uuid;
 pub use crate::grpc_proto::ledger_client::LedgerClient;
 pub use crate::grpc_proto::ledger_server::{Ledger as GrpcLedger, LedgerServer};
 
-/// Interceptor: reject calls without the expected shared secret.
+/// Interceptor: reject calls without the required shared secret.
+/// Mirrors main.rs `grpc_token_from_env`: with APP_ENV=dev and no explicit
+/// token, the well-known local-dev secret is accepted so the server does not
+/// start successfully yet reject every request.
+fn grpc_token() -> Result<String, Status> {
+    match std::env::var("LEDGER_GRPC_TOKEN") {
+        Ok(token) if !token.trim().is_empty() => Ok(token),
+        Ok(_) => Err(Status::unauthenticated(
+            "LEDGER_GRPC_TOKEN is set but empty; refusing to authenticate calls",
+        )),
+        Err(_) if std::env::var("APP_ENV").as_deref() == Ok("dev") => {
+            Ok("anbarrpay-internal-dev".to_string())
+        }
+        Err(_) => Err(Status::unauthenticated(
+            "missing ledger token configuration: set LEDGER_GRPC_TOKEN (or APP_ENV=dev for local-only testing)",
+        )),
+    }
+}
+
 fn check_auth<T>(req: &Request<T>) -> Result<(), Status> {
-    let expected =
-        std::env::var("LEDGER_GRPC_TOKEN").unwrap_or_else(|_| "amberpay-internal-dev".to_string());
+    let expected = grpc_token()?;
     let provided = req
         .metadata()
         .get("x-ledger-token")

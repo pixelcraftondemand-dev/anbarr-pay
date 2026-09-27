@@ -1,9 +1,9 @@
 mod common;
 
-use amber_ledger::engine::LedgerEngine;
-use amber_ledger::money::Currency;
-use amber_ledger::outbox::{EventWorker, LedgerEventConsumer};
-use amber_ledger::types::Origin;
+use anbarr_ledger::engine::LedgerEngine;
+use anbarr_ledger::money::Currency;
+use anbarr_ledger::outbox::{EventWorker, LedgerEventConsumer};
+use anbarr_ledger::types::Origin;
 
 #[tokio::test]
 async fn payment_creates_and_consumes_outbox_event() {
@@ -20,7 +20,7 @@ async fn payment_creates_and_consumes_outbox_event() {
     let recipient = common::create_wallet(&pool, Currency::Sle, 0).await;
 
     let result = worker
-        .post_transfer(amber_ledger::outbox::TransferRequest {
+        .post_transfer(anbarr_ledger::outbox::TransferRequest {
             idempotency_scope: "outbox-user".into(),
             idempotency_key: "outbox-tx-1".into(),
             currency: Currency::Sle,

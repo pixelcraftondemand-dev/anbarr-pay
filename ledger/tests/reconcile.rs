@@ -8,13 +8,13 @@
 
 mod common;
 
-use amber_ledger::engine::LedgerEngine;
-use amber_ledger::money::Currency;
-use amber_ledger::reconcile::{
+use anbarr_ledger::engine::LedgerEngine;
+use anbarr_ledger::money::Currency;
+use anbarr_ledger::reconcile::{
     reconcile, AlertSink, Rail, RailStatementSource, ReconcileReport, ReconcileScheduler,
     ReconcileService, ReconcileStatus, ReconcileTask, StatementLine,
 };
-use amber_ledger::types::{Direction, JournalSpec, JournalType, Leg, Origin};
+use anbarr_ledger::types::{Direction, JournalSpec, JournalType, Leg, Origin};
 use chrono::{Duration, Utc};
 use uuid::Uuid;
 
@@ -36,8 +36,8 @@ fn line(reference: &str, amount: i64) -> StatementLine {
     }
 }
 
-fn ledger_ref(reference: &str, amount: i64) -> amber_ledger::reconcile::LedgerRef {
-    amber_ledger::reconcile::LedgerRef {
+fn ledger_ref(reference: &str, amount: i64) -> anbarr_ledger::reconcile::LedgerRef {
+    anbarr_ledger::reconcile::LedgerRef {
         journal_id: Uuid::new_v4(),
         payment_code: reference.into(),
         journal_type: "topup".into(),
@@ -441,7 +441,7 @@ fn rail_as_str_covers_all_variants() {
 /// A pool that is connected then closed, so every query on it fails.
 async fn closed_pool() -> sqlx::PgPool {
     let closed = sqlx::postgres::PgPoolOptions::new()
-        .connect(&amber_ledger::db::database_url_from_env())
+        .connect(&anbarr_ledger::db::database_url_from_env())
         .await
         .expect("connect to dev postgres");
     closed.close().await;

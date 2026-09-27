@@ -9,10 +9,10 @@
 
 mod common;
 
-use amber_ledger::grpc::LedgerGrpc;
-use amber_ledger::grpc_proto::ledger_client::LedgerClient;
-use amber_ledger::grpc_proto::{AccountRequest, TransferRequest as PbTransferRequest};
-use amber_ledger::money::Currency;
+use anbarr_ledger::grpc::LedgerGrpc;
+use anbarr_ledger::grpc_proto::ledger_client::LedgerClient;
+use anbarr_ledger::grpc_proto::{AccountRequest, TransferRequest as PbTransferRequest};
+use anbarr_ledger::money::Currency;
 use common::{pool, truncate_all};
 use tonic::metadata::MetadataValue;
 use tonic::transport::{Channel, Endpoint, Server};
@@ -20,7 +20,7 @@ use uuid::Uuid;
 
 static GRPC_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
-const TOKEN: &str = "amberpay-internal-dev";
+const TOKEN: &str = "anbarrpay-internal-dev";
 
 /// Start an in-process server on an ephemeral port; return the client with
 /// the auth header attached to every call.
@@ -34,7 +34,7 @@ const TOKEN: &str = "amberpay-internal-dev";
 /// so the reuse race is theoretical).
 async fn spawn_server() -> LedgerClient<Channel> {
     let p = pool().await;
-    let engine = amber_ledger::engine::LedgerEngine::new(p);
+    let engine = anbarr_ledger::engine::LedgerEngine::new(p);
     let server = LedgerGrpc::new(engine).into_server();
 
     // Reserve an ephemeral port, note it, release it for tonic's own bind.
@@ -84,10 +84,20 @@ fn no_auth<T>(req: tonic::Request<T>) -> tonic::Request<T> {
     req
 }
 
+fn set_dev_test_token() {
+    std::env::set_var("APP_ENV", "dev");
+    std::env::set_var("LEDGER_GRPC_TOKEN", TOKEN);
+}
+
+fn clear_server_secret() {
+    std::env::remove_var("APP_ENV");
+    std::env::remove_var("LEDGER_GRPC_TOKEN");
+}
+
 async fn balance_of(
     client: &mut LedgerClient<Channel>,
     id: String,
-) -> amber_ledger::grpc_proto::AccountResponse {
+) -> anbarr_ledger::grpc_proto::AccountResponse {
     client
         .get_account(auth(tonic::Request::new(AccountRequest { account_id: id })))
         .await
@@ -130,7 +140,7 @@ fn transfer_req_inner(key: &str, payer: &str, payee: &str, amount: i64) -> PbTra
         amount_minor: amount,
         fee_bps: 50,
         tax_bps: 0,
-        origin: Some(amber_ledger::grpc_proto::Origin {
+        origin: Some(anbarr_ledger::grpc_proto::Origin {
             user_id: origin_user.to_string(),
             channel: "grpc-test".into(),
             session_id: String::new(),
@@ -142,6 +152,7 @@ fn transfer_req_inner(key: &str, payer: &str, payee: &str, amount: i64) -> PbTra
 #[tokio::test]
 async fn grpc_transfer_replay_and_balance() {
     let _guard = GRPC_LOCK.lock().await;
+    set_dev_test_token();
     let p = pool().await;
     truncate_all(&p).await;
     let mut client = spawn_server().await;
@@ -150,7 +161,7 @@ async fn grpc_transfer_replay_and_balance() {
     // payer directly (funding is a test-harness concern).
     let create = |name: &str| {
         auth(tonic::Request::new(
-            amber_ledger::grpc_proto::CreateAccountRequest {
+            anbarr_ledger::grpc_proto::CreateAccountRequest {
                 owner_type: "user".into(),
                 owner_id: Uuid::new_v4().to_string(),
                 account_type: "wallet".into(),
@@ -207,6 +218,7 @@ async fn grpc_transfer_replay_and_balance() {
 #[tokio::test]
 async fn grpc_rejects_missing_token() {
     let _guard = GRPC_LOCK.lock().await;
+    set_dev_test_token();
     let p = pool().await;
     truncate_all(&p).await;
     let mut client = spawn_server().await;
@@ -226,8 +238,46 @@ async fn grpc_rejects_missing_token() {
 }
 
 #[tokio::test]
+async fn grpc_rejects_legacy_default_token_when_env_missing() {
+    let _guard = GRPC_LOCK.lock().await;
+    let previous = std::env::var("LEDGER_GRPC_TOKEN").ok();
+    clear_server_secret();
+
+    // The app must fail closed when the secret is absent in non-dev mode.
+    let p = pool().await;
+    truncate_all(&p).await;
+    let mut client = spawn_server().await;
+    let payer = common::create_wallet(&p, Currency::Sle, 1_000).await;
+    let payee = common::create_wallet(&p, Currency::Sle, 0).await;
+
+    let mut req = tonic::Request::new(transfer_req_inner(
+        "t-legacy-default",
+        &payer.to_string(),
+        &payee.to_string(),
+        100,
+    ));
+    req.metadata_mut().insert(
+        "x-ledger-token",
+        MetadataValue::try_from("anbarrpay-internal-dev").expect("legacy dev token"),
+    );
+
+    let err = client
+        .post_transfer(req)
+        .await
+        .expect_err("legacy default token should be rejected when env secret is unset");
+    assert!(err.message().contains("ledger token") || err.message().contains("unauthenticated"));
+
+    if let Some(token) = previous {
+        std::env::set_var("LEDGER_GRPC_TOKEN", token);
+    } else {
+        std::env::remove_var("LEDGER_GRPC_TOKEN");
+    }
+}
+
+#[tokio::test]
 async fn grpc_mismatch_and_insufficient_funds_map_to_status_codes() {
     let _guard = GRPC_LOCK.lock().await;
+    set_dev_test_token();
     let p = pool().await;
     truncate_all(&p).await;
     let mut client = spawn_server().await;

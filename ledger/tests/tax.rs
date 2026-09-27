@@ -11,11 +11,11 @@
 
 mod common;
 
-use amber_ledger::engine::{
+use anbarr_ledger::engine::{
     EngineError, FeePolicy, LedgerEngine, PaymentRequest, ReversalRequest, TaxPolicy,
 };
-use amber_ledger::money::Currency;
-use amber_ledger::types::{Direction, JournalType, Origin};
+use anbarr_ledger::money::Currency;
+use anbarr_ledger::types::{Direction, JournalType, Origin};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -71,7 +71,7 @@ fn payment_req_with(
 }
 
 async fn balance(p: &PgPool, account: Uuid) -> i64 {
-    amber_ledger::balances::get_balance(p, account)
+    anbarr_ledger::balances::get_balance(p, account)
         .await
         .expect("balance")
         .available_minor
@@ -279,7 +279,7 @@ async fn tax_bps_above_100_percent_rejected() {
 /// the payee is credited the principal only.
 #[test]
 fn payment_legs_with_tax_charge_payer_once() {
-    use amber_ledger::engine::payment_legs;
+    use anbarr_ledger::engine::payment_legs;
     let (payer, payee, fee_rev, tax) = (Uuid::nil(), Uuid::nil(), Uuid::nil(), Uuid::nil());
 
     let legs = payment_legs(10_000, 50, payer, payee, fee_rev, 150, tax);

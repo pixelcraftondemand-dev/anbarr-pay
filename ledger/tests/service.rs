@@ -1,13 +1,13 @@
 mod common;
 
-use amber_ledger::money::Currency;
-use amber_ledger::service::{LedgerService, TransferRequest};
-use amber_ledger::types::Origin;
+use anbarr_ledger::money::Currency;
+use anbarr_ledger::service::{LedgerService, TransferRequest};
+use anbarr_ledger::types::Origin;
 
 #[tokio::test]
 async fn transfer_service_replays_same_idempotency_key() {
     let pool = common::pool().await;
-    let service = LedgerService::new(amber_ledger::engine::LedgerEngine::new(pool.clone()));
+    let service = LedgerService::new(anbarr_ledger::engine::LedgerEngine::new(pool.clone()));
 
     let sender = common::create_wallet(&pool, Currency::Sle, 100_000).await;
     let recipient = common::create_wallet(&pool, Currency::Sle, 0).await;

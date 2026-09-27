@@ -1,8 +1,8 @@
 #[allow(dead_code)]
 mod common;
 
-use amber_ledger::money::Currency;
-use amber_ledger::reconcile::{OrangeMoneySource, Rail, RailStatementSource};
+use anbarr_ledger::money::Currency;
+use anbarr_ledger::reconcile::{OrangeMoneySource, Rail, RailStatementSource};
 use chrono::{TimeZone, Utc};
 
 #[tokio::test]
@@ -12,19 +12,19 @@ async fn orange_money_source_maps_statement_lines_for_a_window() {
 
     let source = RailStatementSource::OrangeMoney {
         source: OrangeMoneySource::new(vec![
-            amber_ledger::reconcile::OrangeMoneyStatementLine {
+            anbarr_ledger::reconcile::OrangeMoneyStatementLine {
                 external_reference: "ref-001".into(),
                 amount_minor: 10_000,
                 currency: Currency::Sle,
                 occurred_at: Utc.with_ymd_and_hms(2026, 1, 1, 12, 0, 0).unwrap(),
             },
-            amber_ledger::reconcile::OrangeMoneyStatementLine {
+            anbarr_ledger::reconcile::OrangeMoneyStatementLine {
                 external_reference: "ref-002".into(),
                 amount_minor: -2_000,
                 currency: Currency::Sle,
                 occurred_at: Utc.with_ymd_and_hms(2026, 1, 1, 18, 0, 0).unwrap(),
             },
-            amber_ledger::reconcile::OrangeMoneyStatementLine {
+            anbarr_ledger::reconcile::OrangeMoneyStatementLine {
                 external_reference: "ref-003".into(),
                 amount_minor: 5_000,
                 currency: Currency::Usd,

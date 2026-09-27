@@ -5,9 +5,9 @@
 
 mod common;
 
-use amber_ledger::engine::{CreateAccountRequest, LedgerEngine};
-use amber_ledger::money::Currency;
-use amber_ledger::types::AccountType;
+use anbarr_ledger::engine::{CreateAccountRequest, LedgerEngine};
+use anbarr_ledger::money::Currency;
+use anbarr_ledger::types::AccountType;
 use sqlx::Acquire;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -48,7 +48,7 @@ async fn creates_wallet_account() {
     assert_eq!(currency, "SLE");
 
     // Fresh wallet starts at zero, and the engine reports it.
-    let bal = amber_ledger::balances::get_balance(&p, res.account_id)
+    let bal = anbarr_ledger::balances::get_balance(&p, res.account_id)
         .await
         .unwrap();
     assert_eq!(bal.available_minor, 0);
@@ -126,7 +126,7 @@ async fn platform_accounts_cannot_be_created_through_the_api() {
         .await
         .unwrap_err();
     assert!(
-        matches!(err, amber_ledger::engine::EngineError::InvalidAccount(_)),
+        matches!(err, anbarr_ledger::engine::EngineError::InvalidAccount(_)),
         "got {err:?}"
     );
 
@@ -143,7 +143,7 @@ async fn platform_accounts_cannot_be_created_through_the_api() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::InvalidAccount(_)
+        anbarr_ledger::engine::EngineError::InvalidAccount(_)
     ));
 }
 
@@ -199,7 +199,7 @@ async fn create_account_rejects_empty_name() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::InvalidAccount(_)
+        anbarr_ledger::engine::EngineError::InvalidAccount(_)
     ));
 }
 

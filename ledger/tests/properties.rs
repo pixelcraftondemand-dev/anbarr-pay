@@ -13,9 +13,9 @@
 //!   rule". The rail_bridge clearing account is that one explicit overdraft
 //!   (it is monitored by reconciliation instead of the funds check).
 
-use amber_ledger::engine::{check_funds, payment_legs, validate_spec, EngineError};
-use amber_ledger::money::round_fee;
-use amber_ledger::types::{Direction, JournalSpec, JournalType, Leg, Origin};
+use anbarr_ledger::engine::{check_funds, payment_legs, validate_spec, EngineError};
+use anbarr_ledger::money::round_fee;
+use anbarr_ledger::types::{Direction, JournalSpec, JournalType, Leg, Origin};
 use proptest::prelude::*;
 use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
@@ -39,7 +39,7 @@ fn leg_strategy() -> impl Strategy<Value = Leg> {
 fn spec_strategy() -> impl Strategy<Value = JournalSpec> {
     prop::collection::vec(leg_strategy(), 0..10).prop_map(|legs| JournalSpec {
         journal_type: JournalType::P2p,
-        currency: amber_ledger::money::Currency::Sle,
+        currency: anbarr_ledger::money::Currency::Sle,
         origin: Origin::default(),
         legs,
     })
@@ -224,7 +224,7 @@ proptest! {
         let fee = round_fee(principal, bps);
         let spec = JournalSpec {
             journal_type: JournalType::P2p,
-            currency: amber_ledger::money::Currency::Sle,
+            currency: anbarr_ledger::money::Currency::Sle,
             origin: Origin::default(),
             legs: vec![
                 Leg {
@@ -271,7 +271,7 @@ proptest! {
         let legs = payment_legs(amount, bps, payer, payee, fee_revenue, tax_bps, tax_payable);
         let spec = JournalSpec {
             journal_type: JournalType::P2p,
-            currency: amber_ledger::money::Currency::Sle,
+            currency: anbarr_ledger::money::Currency::Sle,
             origin: Origin::default(),
             legs: legs.clone(),
         };

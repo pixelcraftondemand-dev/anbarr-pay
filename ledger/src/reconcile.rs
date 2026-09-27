@@ -254,11 +254,21 @@ impl OrangeMoneySource {
 }
 
 /// Where statement lines come from. The real rail adapters are modeled here;
-/// the stub remains for simple local pipeline tests and smoke runs.
+/// the stub remains for simple local pipeline tests and smoke runs, and the
+/// sandbox source (docs/providers-webhooks.md §3) drives the full §50
+/// scenario matrix (success / failure / pending / timeout / duplicate
+/// webhook / refund / outage) with `SANDBOX_PAYMENT`-labeled references.
 #[derive(Debug, Clone)]
 pub enum RailStatementSource {
-    Stub { lines: Vec<StatementLine> },
-    OrangeMoney { source: OrangeMoneySource },
+    Stub {
+        lines: Vec<StatementLine>,
+    },
+    OrangeMoney {
+        source: OrangeMoneySource,
+    },
+    Sandbox {
+        sandbox: crate::sandbox::SandboxSource,
+    },
 }
 
 impl RailStatementSource {
@@ -285,6 +295,13 @@ impl RailStatementSource {
                 }
                 Ok(source.lines_in_window(currency, since, until))
             }
+            RailStatementSource::Sandbox { sandbox } => Ok(sandbox
+                .lines
+                .iter()
+                .filter(|line| line.currency == currency)
+                .filter(|line| line.occurred_at >= since && line.occurred_at < until)
+                .cloned()
+                .collect()),
         }
     }
 }

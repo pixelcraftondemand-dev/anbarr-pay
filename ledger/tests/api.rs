@@ -1,7 +1,7 @@
 mod common;
 
-use amber_ledger::api::{create_app, TransferApiRequest};
-use amber_ledger::money::Currency;
+use anbarr_ledger::api::{create_app, TransferApiRequest};
+use anbarr_ledger::money::Currency;
 use axum::{
     body::Body,
     http::{Request, StatusCode},
@@ -38,7 +38,7 @@ async fn transfer_route_replays_same_idempotency_key() {
                 .method("POST")
                 .uri("/v1/transfers")
                 .header("content-type", "application/json")
-                .header("authorization", "Bearer amberpay-demo-token")
+                .header("authorization", "Bearer anbarrpay-demo-token")
                 .body(Body::from(body.clone()))
                 .unwrap(),
         )
@@ -52,7 +52,7 @@ async fn transfer_route_replays_same_idempotency_key() {
                 .method("POST")
                 .uri("/v1/transfers")
                 .header("content-type", "application/json")
-                .header("authorization", "Bearer amberpay-demo-token")
+                .header("authorization", "Bearer anbarrpay-demo-token")
                 .body(Body::from(body))
                 .unwrap(),
         )
@@ -101,7 +101,7 @@ async fn transfer_route_rejects_empty_idempotency_key() {
                 .method("POST")
                 .uri("/v1/transfers")
                 .header("content-type", "application/json")
-                .header("authorization", "Bearer amberpay-demo-token")
+                .header("authorization", "Bearer anbarrpay-demo-token")
                 .body(Body::from(serde_json::to_vec(&request).unwrap()))
                 .unwrap(),
         )
@@ -174,7 +174,7 @@ async fn transfer_route_accepts_api_key_auth() {
                 .method("POST")
                 .uri("/v1/transfers")
                 .header("content-type", "application/json")
-                .header("x-api-key", "amberpay-demo-key")
+                .header("x-api-key", "anbarrpay-demo-key")
                 .body(Body::from(serde_json::to_vec(&request).unwrap()))
                 .unwrap(),
         )

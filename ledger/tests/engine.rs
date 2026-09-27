@@ -3,9 +3,9 @@
 
 mod common;
 
-use amber_ledger::engine::{CaptureRequest, HoldRequest, LedgerEngine, ReleaseRequest};
-use amber_ledger::money::Currency;
-use amber_ledger::types::{Direction, JournalSpec, JournalType, Leg, Origin};
+use anbarr_ledger::engine::{CaptureRequest, HoldRequest, LedgerEngine, ReleaseRequest};
+use anbarr_ledger::money::Currency;
+use anbarr_ledger::types::{Direction, JournalSpec, JournalType, Leg, Origin};
 use chrono::{Duration, Utc};
 use sqlx::{Acquire, PgPool};
 use uuid::Uuid;
@@ -72,7 +72,7 @@ async fn transfer_moves_funds_and_fee() {
         ],
     };
     // fee_revenue is a shared singleton, so assert the delta this journal added.
-    let fee_before = amber_ledger::balances::get_balance(&p, fee)
+    let fee_before = anbarr_ledger::balances::get_balance(&p, fee)
         .await
         .unwrap()
         .available_minor;
@@ -81,15 +81,15 @@ async fn transfer_moves_funds_and_fee() {
         .await
         .expect("post");
 
-    let bal_a = amber_ledger::balances::get_balance(&p, a).await.unwrap();
-    let bal_b = amber_ledger::balances::get_balance(&p, b).await.unwrap();
-    let bal_fee = amber_ledger::balances::get_balance(&p, fee).await.unwrap();
+    let bal_a = anbarr_ledger::balances::get_balance(&p, a).await.unwrap();
+    let bal_b = anbarr_ledger::balances::get_balance(&p, b).await.unwrap();
+    let bal_fee = anbarr_ledger::balances::get_balance(&p, fee).await.unwrap();
 
     assert_eq!(bal_a.available_minor, 100_000 - 25_125);
     assert_eq!(bal_b.available_minor, 25_000);
     assert_eq!(bal_fee.available_minor, fee_before + 125);
     assert_eq!(bal_a.total_minor, bal_a.available_minor);
-    assert_eq!(result.status, amber_ledger::types::JournalStatus::Posted);
+    assert_eq!(result.status, anbarr_ledger::types::JournalStatus::Posted);
 
     // Journals must balance: debits == credits. (SUM over bigint is numeric,
     // so cast back to bigint for i64 decoding.)
@@ -136,13 +136,13 @@ async fn insufficient_funds_rejected_atomically() {
     assert!(
         matches!(
             err,
-            amber_ledger::engine::EngineError::InsufficientFunds { .. }
+            anbarr_ledger::engine::EngineError::InsufficientFunds { .. }
         ),
         "expected InsufficientFunds, got {err:?}"
     );
 
     // Nothing was written.
-    let bal_a = amber_ledger::balances::get_balance(&p, a).await.unwrap();
+    let bal_a = anbarr_ledger::balances::get_balance(&p, a).await.unwrap();
     assert_eq!(bal_a.available_minor, 100_000);
     let count: i64 =
         sqlx::query_scalar("SELECT count(*) FROM journals WHERE idempotency_key = 'tx-over'")
@@ -180,7 +180,7 @@ async fn unbalanced_journal_rejected() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::Unbalanced { .. }
+        anbarr_ledger::engine::EngineError::Unbalanced { .. }
     ));
 }
 
@@ -235,7 +235,7 @@ async fn duplicate_key_replays_without_double_posting() {
         .unwrap();
     assert_eq!(count, 2, "no duplicate entries on replay");
 
-    let bal_a = amber_ledger::balances::get_balance(&p, a).await.unwrap();
+    let bal_a = anbarr_ledger::balances::get_balance(&p, a).await.unwrap();
     assert_eq!(bal_a.available_minor, 90_000, "single debit only");
 }
 
@@ -263,12 +263,12 @@ async fn hold_capture_cycle() {
         .await
         .expect("hold");
 
-    let bal_a = amber_ledger::balances::get_balance(&p, a).await.unwrap();
+    let bal_a = anbarr_ledger::balances::get_balance(&p, a).await.unwrap();
     assert_eq!(bal_a.available_minor, 90_000, "available drops by the hold");
     assert_eq!(bal_a.held_minor, 10_000);
     assert_eq!(bal_a.total_minor, 100_000, "total unchanged while held");
 
-    let bal_escrow = amber_ledger::balances::get_balance(&p, escrow)
+    let bal_escrow = anbarr_ledger::balances::get_balance(&p, escrow)
         .await
         .unwrap();
     assert_eq!(bal_escrow.available_minor, 10_000);
@@ -285,9 +285,9 @@ async fn hold_capture_cycle() {
         .await
         .expect("capture");
 
-    let bal_a = amber_ledger::balances::get_balance(&p, a).await.unwrap();
-    let bal_b = amber_ledger::balances::get_balance(&p, b).await.unwrap();
-    let bal_escrow = amber_ledger::balances::get_balance(&p, escrow)
+    let bal_a = anbarr_ledger::balances::get_balance(&p, a).await.unwrap();
+    let bal_b = anbarr_ledger::balances::get_balance(&p, b).await.unwrap();
+    let bal_escrow = anbarr_ledger::balances::get_balance(&p, escrow)
         .await
         .unwrap();
     assert_eq!(bal_a.available_minor, 90_000);
@@ -342,11 +342,11 @@ async fn hold_release_cycle() {
         .await
         .expect("release");
 
-    let bal_a = amber_ledger::balances::get_balance(&p, a).await.unwrap();
-    let bal_escrow = amber_ledger::balances::get_balance(&p, escrow)
+    let bal_a = anbarr_ledger::balances::get_balance(&p, a).await.unwrap();
+    let bal_escrow = anbarr_ledger::balances::get_balance(&p, escrow)
         .await
         .unwrap();
-    let bal_b = amber_ledger::balances::get_balance(&p, b).await.unwrap();
+    let bal_b = anbarr_ledger::balances::get_balance(&p, b).await.unwrap();
     assert_eq!(bal_a.available_minor, 100_000, "released funds return");
     assert_eq!(bal_a.held_minor, 0);
     assert_eq!(bal_escrow.available_minor, 0);
@@ -364,7 +364,7 @@ async fn hold_release_cycle() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::HoldNotHeld { .. }
+        anbarr_ledger::engine::EngineError::HoldNotHeld { .. }
     ));
 }
 
@@ -387,7 +387,7 @@ async fn hold_fails_without_funds() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::InsufficientFunds { .. }
+        anbarr_ledger::engine::EngineError::InsufficientFunds { .. }
     ));
 }
 
@@ -399,7 +399,7 @@ async fn hold_fails_without_funds() {
 async fn available_for_empty_account_list_returns_empty_map() {
     let p = pool().await;
     let mut tx = p.begin().await.unwrap();
-    let available = amber_ledger::balances::available_for(&mut tx, &[])
+    let available = anbarr_ledger::balances::available_for(&mut tx, &[])
         .await
         .unwrap();
     assert!(available.is_empty(), "no accounts => no balances");
@@ -428,7 +428,7 @@ async fn held_for_reports_open_holds_and_matches_read_path() {
         .expect("hold");
 
     let mut tx = p.begin().await.unwrap();
-    let held = amber_ledger::balances::held_for(&mut tx, &[a, b])
+    let held = anbarr_ledger::balances::held_for(&mut tx, &[a, b])
         .await
         .unwrap();
     assert_eq!(held.get(&a), Some(&4_000), "open hold is reported");
@@ -436,14 +436,14 @@ async fn held_for_reports_open_holds_and_matches_read_path() {
         !held.contains_key(&b),
         "wallet with no open holds is absent from the map"
     );
-    let none = amber_ledger::balances::held_for(&mut tx, &[])
+    let none = anbarr_ledger::balances::held_for(&mut tx, &[])
         .await
         .unwrap();
     assert!(none.is_empty(), "no accounts => no held amounts");
     tx.rollback().await.unwrap();
 
     // Cross-check the batch query against the read path.
-    let bal = amber_ledger::balances::get_balance(&p, a).await.unwrap();
+    let bal = anbarr_ledger::balances::get_balance(&p, a).await.unwrap();
     assert_eq!(bal.available_minor, 100_000 - 4_000);
     assert_eq!(bal.held_minor, 4_000);
     assert_eq!(bal.total_minor, 100_000);
@@ -459,7 +459,7 @@ async fn held_for_reports_open_holds_and_matches_read_path() {
         })
         .await
         .expect("release");
-    let bal_escrow = amber_ledger::balances::get_balance(&p, escrow)
+    let bal_escrow = anbarr_ledger::balances::get_balance(&p, escrow)
         .await
         .unwrap();
     assert_eq!(bal_escrow.available_minor, 0, "escrow left clean");
@@ -497,14 +497,14 @@ async fn expired_holds_are_swept() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::HoldExpired(_)
+        anbarr_ledger::engine::EngineError::HoldExpired(_)
     ));
 
     let swept = engine.expire_holds().await.expect("sweep");
     assert_eq!(swept, 1);
 
-    let bal_a = amber_ledger::balances::get_balance(&p, a).await.unwrap();
-    let bal_escrow = amber_ledger::balances::get_balance(&p, escrow)
+    let bal_a = anbarr_ledger::balances::get_balance(&p, a).await.unwrap();
+    let bal_escrow = anbarr_ledger::balances::get_balance(&p, escrow)
         .await
         .unwrap();
     assert_eq!(
@@ -556,8 +556,8 @@ async fn concurrent_transfers_never_overdraw() {
         h.await.expect("join");
     }
 
-    let bal_a = amber_ledger::balances::get_balance(&p, a).await.unwrap();
-    let bal_b = amber_ledger::balances::get_balance(&p, b).await.unwrap();
+    let bal_a = anbarr_ledger::balances::get_balance(&p, a).await.unwrap();
+    let bal_b = anbarr_ledger::balances::get_balance(&p, b).await.unwrap();
     assert_eq!(bal_a.available_minor, 100_000 - 8 * 10_000);
     assert_eq!(bal_b.available_minor, 8 * 10_000);
     assert!(bal_a.available_minor >= 0, "never overdraw");
@@ -586,7 +586,7 @@ async fn concurrent_transfers_never_overdraw() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::InsufficientFunds { .. }
+        anbarr_ledger::engine::EngineError::InsufficientFunds { .. }
     ));
 }
 
@@ -628,7 +628,7 @@ async fn snapshots_match_recomputation_and_audit_is_clean() {
     };
     engine.post_journal("user-1", "aud-1", spec).await.unwrap();
 
-    let drifted = amber_ledger::balances::audit_snapshots(&p).await.unwrap();
+    let drifted = anbarr_ledger::balances::audit_snapshots(&p).await.unwrap();
     assert!(drifted.is_empty(), "snapshots drifted: {drifted:?}");
 
     let (snap_avail, snap_held, snap_total): (i64, i64, i64) = sqlx::query_as(
@@ -638,7 +638,7 @@ async fn snapshots_match_recomputation_and_audit_is_clean() {
     .fetch_one(&p)
     .await
     .unwrap();
-    let bal = amber_ledger::balances::get_balance(&p, a).await.unwrap();
+    let bal = anbarr_ledger::balances::get_balance(&p, a).await.unwrap();
     assert_eq!(snap_avail, bal.available_minor);
     assert_eq!(snap_held, bal.held_minor);
     assert_eq!(snap_total, bal.total_minor);
@@ -667,7 +667,7 @@ async fn hold_funds_rejects_non_positive_amount() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::InvalidJournal(_)
+        anbarr_ledger::engine::EngineError::InvalidJournal(_)
     ));
 }
 
@@ -714,7 +714,7 @@ async fn capture_already_captured_hold_fails() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::HoldNotHeld { .. }
+        anbarr_ledger::engine::EngineError::HoldNotHeld { .. }
     ));
 }
 
@@ -757,7 +757,7 @@ async fn release_fails_when_idempotency_key_in_progress() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::IdempotencyInProgress { .. }
+        anbarr_ledger::engine::EngineError::IdempotencyInProgress { .. }
     ));
 
     // Clean up so the shared escrow singleton is left at zero.
@@ -774,7 +774,7 @@ async fn release_fails_when_idempotency_key_in_progress() {
         })
         .await
         .expect("release after clearing stale key");
-    let bal_escrow = amber_ledger::balances::get_balance(&p, escrow)
+    let bal_escrow = anbarr_ledger::balances::get_balance(&p, escrow)
         .await
         .unwrap();
     assert_eq!(bal_escrow.available_minor, 0);
@@ -819,7 +819,7 @@ async fn capture_fails_when_idempotency_key_in_progress() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::IdempotencyInProgress { .. }
+        anbarr_ledger::engine::EngineError::IdempotencyInProgress { .. }
     ));
 
     // Clean up so the shared escrow singleton is left at zero.
@@ -836,7 +836,7 @@ async fn capture_fails_when_idempotency_key_in_progress() {
         })
         .await
         .expect("release for cleanup");
-    let bal_escrow = amber_ledger::balances::get_balance(&p, escrow)
+    let bal_escrow = anbarr_ledger::balances::get_balance(&p, escrow)
         .await
         .unwrap();
     assert_eq!(bal_escrow.available_minor, 0);
@@ -870,7 +870,7 @@ async fn expire_fails_when_wallet_frozen() {
     let err = engine.expire_holds().await.unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::AccountNotActive(_)
+        anbarr_ledger::engine::EngineError::AccountNotActive(_)
     ));
 
     // Unfreeze and sweep for real so the shared escrow is left at zero.
@@ -881,7 +881,7 @@ async fn expire_fails_when_wallet_frozen() {
         .unwrap();
     let swept = engine.expire_holds().await.expect("sweep after unfreeze");
     assert_eq!(swept, 1);
-    let bal_escrow = amber_ledger::balances::get_balance(&p, escrow)
+    let bal_escrow = anbarr_ledger::balances::get_balance(&p, escrow)
         .await
         .unwrap();
     assert_eq!(bal_escrow.available_minor, 0);
@@ -915,7 +915,7 @@ async fn posting_with_unknown_account_fails() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::AccountNotFound(_)
+        anbarr_ledger::engine::EngineError::AccountNotFound(_)
     ));
 }
 
@@ -952,7 +952,7 @@ async fn posting_to_frozen_account_fails() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::AccountNotActive(_)
+        anbarr_ledger::engine::EngineError::AccountNotActive(_)
     ));
 }
 
@@ -1012,7 +1012,7 @@ async fn idempotency_claim_race_fails() {
     let err = task.await.expect("join").unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::IdempotencyInProgress { .. }
+        anbarr_ledger::engine::EngineError::IdempotencyInProgress { .. }
     ));
 }
 
@@ -1059,7 +1059,7 @@ async fn replay_with_missing_response_fails() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::InvalidJournal(_)
+        anbarr_ledger::engine::EngineError::InvalidJournal(_)
     ));
 }
 
@@ -1104,7 +1104,7 @@ async fn replay_with_malformed_response_fails() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::InvalidJournal(_)
+        anbarr_ledger::engine::EngineError::InvalidJournal(_)
     ));
 }
 
@@ -1161,13 +1161,13 @@ async fn same_key_with_different_payload_is_rejected() {
     assert!(
         matches!(
             err,
-            amber_ledger::engine::EngineError::IdempotencyMismatch { .. }
+            anbarr_ledger::engine::EngineError::IdempotencyMismatch { .. }
         ),
         "expected IdempotencyMismatch, got {err:?}"
     );
 
     // Only the first debit happened.
-    let bal_a = amber_ledger::balances::get_balance(&p, a).await.unwrap();
+    let bal_a = anbarr_ledger::balances::get_balance(&p, a).await.unwrap();
     assert_eq!(bal_a.available_minor, 100_000 - 10_000);
 }
 
@@ -1217,7 +1217,7 @@ async fn expired_done_key_replays_from_journal() {
         "expired cache still replays the original journal"
     );
 
-    let bal_a = amber_ledger::balances::get_balance(&p, a).await.unwrap();
+    let bal_a = anbarr_ledger::balances::get_balance(&p, a).await.unwrap();
     assert_eq!(bal_a.available_minor, 90_000, "single debit only");
 }
 
@@ -1264,7 +1264,7 @@ async fn pruned_cache_still_replays_from_journal() {
         "pruned cache replays the original journal"
     );
 
-    let bal_a = amber_ledger::balances::get_balance(&p, a).await.unwrap();
+    let bal_a = anbarr_ledger::balances::get_balance(&p, a).await.unwrap();
     assert_eq!(bal_a.available_minor, 90_000, "single debit only");
 }
 
@@ -1305,8 +1305,8 @@ async fn expired_in_progress_key_is_reclaimed() {
         .post_journal("stale", "stale-1", spec)
         .await
         .expect("expired in-progress key is reclaimed and posts");
-    assert_eq!(result.status, amber_ledger::types::JournalStatus::Posted);
-    let bal_a = amber_ledger::balances::get_balance(&p, a).await.unwrap();
+    assert_eq!(result.status, anbarr_ledger::types::JournalStatus::Posted);
+    let bal_a = anbarr_ledger::balances::get_balance(&p, a).await.unwrap();
     assert_eq!(bal_a.available_minor, 90_000, "funds actually moved");
 }
 
@@ -1357,7 +1357,7 @@ async fn expired_in_progress_key_with_journal_replays() {
         first.journal_id, replay.journal_id,
         "journal exists => replay, never a second post"
     );
-    let bal_a = amber_ledger::balances::get_balance(&p, a).await.unwrap();
+    let bal_a = anbarr_ledger::balances::get_balance(&p, a).await.unwrap();
     assert_eq!(bal_a.available_minor, 90_000, "single debit only");
 }
 

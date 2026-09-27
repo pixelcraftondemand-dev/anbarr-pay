@@ -7,9 +7,9 @@
 
 mod common;
 
-use amber_ledger::engine::{AgentCommission, FeePolicy, LedgerEngine, PaymentRequest};
-use amber_ledger::money::Currency;
-use amber_ledger::types::{Direction, JournalType, Origin};
+use anbarr_ledger::engine::{AgentCommission, FeePolicy, LedgerEngine, PaymentRequest};
+use anbarr_ledger::money::Currency;
+use anbarr_ledger::types::{Direction, JournalType, Origin};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -77,7 +77,7 @@ fn payment_req(
 
 #[test]
 fn payment_legs_charge_fee_to_payer_and_skip_zero_fee() {
-    use amber_ledger::engine::payment_legs;
+    use anbarr_ledger::engine::payment_legs;
     let (payer, payee, fee_rev, tax) = (Uuid::nil(), Uuid::nil(), Uuid::nil(), Uuid::nil());
 
     // 0.5% of 25_000 = 125: payer pays 25_125, payee gets 25_000, fee leg present.
@@ -121,7 +121,7 @@ async fn fee_charged_to_paying_party() {
     let payer = create_wallet(&p, Currency::Sle, 100_000).await;
     let payee = create_wallet(&p, Currency::Sle, 0).await;
     let fee_rev = platform_account(&p, "fee_revenue", Currency::Sle).await;
-    let fee_before = amber_ledger::balances::get_balance(&p, fee_rev)
+    let fee_before = anbarr_ledger::balances::get_balance(&p, fee_rev)
         .await
         .unwrap()
         .available_minor;
@@ -134,13 +134,13 @@ async fn fee_charged_to_paying_party() {
     assert_eq!(res.commission_minor, 0);
     assert!(res.commission_journal_id.is_none());
 
-    let bal_payer = amber_ledger::balances::get_balance(&p, payer)
+    let bal_payer = anbarr_ledger::balances::get_balance(&p, payer)
         .await
         .unwrap();
-    let bal_payee = amber_ledger::balances::get_balance(&p, payee)
+    let bal_payee = anbarr_ledger::balances::get_balance(&p, payee)
         .await
         .unwrap();
-    let bal_fee = amber_ledger::balances::get_balance(&p, fee_rev)
+    let bal_fee = anbarr_ledger::balances::get_balance(&p, fee_rev)
         .await
         .unwrap();
     assert_eq!(bal_payer.available_minor, 100_000 - 25_125);
@@ -164,7 +164,7 @@ async fn dust_transaction_posts_without_fee() {
     let payer = create_wallet(&p, Currency::Sle, 100).await;
     let payee = create_wallet(&p, Currency::Sle, 0).await;
     let fee_rev = platform_account(&p, "fee_revenue", Currency::Sle).await;
-    let fee_before = amber_ledger::balances::get_balance(&p, fee_rev)
+    let fee_before = anbarr_ledger::balances::get_balance(&p, fee_rev)
         .await
         .unwrap()
         .available_minor;
@@ -175,13 +175,13 @@ async fn dust_transaction_posts_without_fee() {
         .expect("post dust payment");
     assert_eq!(res.fee_minor, 0);
 
-    let bal_payer = amber_ledger::balances::get_balance(&p, payer)
+    let bal_payer = anbarr_ledger::balances::get_balance(&p, payer)
         .await
         .unwrap();
-    let bal_payee = amber_ledger::balances::get_balance(&p, payee)
+    let bal_payee = anbarr_ledger::balances::get_balance(&p, payee)
         .await
         .unwrap();
-    let bal_fee = amber_ledger::balances::get_balance(&p, fee_rev)
+    let bal_fee = anbarr_ledger::balances::get_balance(&p, fee_rev)
         .await
         .unwrap();
     assert_eq!(bal_payer.available_minor, 99);
@@ -206,7 +206,7 @@ async fn agent_commission_paid_out_of_fee_revenue_into_float() {
     let payee = create_wallet(&p, Currency::Sle, 0).await;
     let float = create_float(&p, 0).await;
     let fee_rev = platform_account(&p, "fee_revenue", Currency::Sle).await;
-    let fee_before = amber_ledger::balances::get_balance(&p, fee_rev)
+    let fee_before = anbarr_ledger::balances::get_balance(&p, fee_rev)
         .await
         .unwrap()
         .available_minor;
@@ -229,16 +229,16 @@ async fn agent_commission_paid_out_of_fee_revenue_into_float() {
         .commission_journal_id
         .expect("commission journal posted");
 
-    let bal_payer = amber_ledger::balances::get_balance(&p, payer)
+    let bal_payer = anbarr_ledger::balances::get_balance(&p, payer)
         .await
         .unwrap();
-    let bal_payee = amber_ledger::balances::get_balance(&p, payee)
+    let bal_payee = anbarr_ledger::balances::get_balance(&p, payee)
         .await
         .unwrap();
-    let bal_fee = amber_ledger::balances::get_balance(&p, fee_rev)
+    let bal_fee = anbarr_ledger::balances::get_balance(&p, fee_rev)
         .await
         .unwrap();
-    let bal_float = amber_ledger::balances::get_balance(&p, float)
+    let bal_float = anbarr_ledger::balances::get_balance(&p, float)
         .await
         .unwrap();
     assert_eq!(
@@ -311,7 +311,7 @@ async fn zero_commission_is_skipped() {
     assert_eq!(res.fee_minor, 0);
     assert_eq!(res.commission_minor, 0);
     assert!(res.commission_journal_id.is_none());
-    let bal_float = amber_ledger::balances::get_balance(&p, float)
+    let bal_float = anbarr_ledger::balances::get_balance(&p, float)
         .await
         .unwrap();
     assert_eq!(bal_float.available_minor, 0);
@@ -337,10 +337,10 @@ async fn replay_posts_fee_and_commission_once() {
     );
     assert_eq!(first.commission_journal_id, second.commission_journal_id);
 
-    let bal_payer = amber_ledger::balances::get_balance(&p, payer)
+    let bal_payer = anbarr_ledger::balances::get_balance(&p, payer)
         .await
         .unwrap();
-    let bal_float = amber_ledger::balances::get_balance(&p, float)
+    let bal_float = anbarr_ledger::balances::get_balance(&p, float)
         .await
         .unwrap();
     assert_eq!(
@@ -371,7 +371,7 @@ async fn commission_over_fee_revenue_rolls_back_the_whole_payment() {
     let payee = create_wallet(&p, Currency::Sle, 0).await;
     let float = create_float(&p, 0).await;
     let fee_rev = platform_account(&p, "fee_revenue", Currency::Sle).await;
-    let fee_before = amber_ledger::balances::get_balance(&p, fee_rev)
+    let fee_before = anbarr_ledger::balances::get_balance(&p, fee_rev)
         .await
         .unwrap()
         .available_minor;
@@ -393,18 +393,18 @@ async fn commission_over_fee_revenue_rolls_back_the_whole_payment() {
     assert!(
         matches!(
             err,
-            amber_ledger::engine::EngineError::InsufficientFunds { .. }
+            anbarr_ledger::engine::EngineError::InsufficientFunds { .. }
         ),
         "expected InsufficientFunds, got {err:?}"
     );
 
-    let bal_payer = amber_ledger::balances::get_balance(&p, payer)
+    let bal_payer = anbarr_ledger::balances::get_balance(&p, payer)
         .await
         .unwrap();
-    let bal_payee = amber_ledger::balances::get_balance(&p, payee)
+    let bal_payee = anbarr_ledger::balances::get_balance(&p, payee)
         .await
         .unwrap();
-    let bal_fee = amber_ledger::balances::get_balance(&p, fee_rev)
+    let bal_fee = anbarr_ledger::balances::get_balance(&p, fee_rev)
         .await
         .unwrap();
     assert_eq!(
@@ -447,7 +447,7 @@ async fn post_payment_rejects_zero_amount() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::InvalidJournal(_)
+        anbarr_ledger::engine::EngineError::InvalidJournal(_)
     ));
 }
 
@@ -473,7 +473,7 @@ async fn post_payment_rejects_fee_over_100_percent() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::InvalidJournal(_)
+        anbarr_ledger::engine::EngineError::InvalidJournal(_)
     ));
 }
 
@@ -500,7 +500,7 @@ async fn post_payment_rejects_commission_over_100_percent() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::InvalidJournal(_)
+        anbarr_ledger::engine::EngineError::InvalidJournal(_)
     ));
 }
 
@@ -519,6 +519,6 @@ async fn post_payment_rejects_insufficient_payer_funds() {
         .unwrap_err();
     assert!(matches!(
         err,
-        amber_ledger::engine::EngineError::InsufficientFunds { .. }
+        anbarr_ledger::engine::EngineError::InsufficientFunds { .. }
     ));
 }

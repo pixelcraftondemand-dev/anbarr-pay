@@ -1,4 +1,4 @@
-//! AMBER PAY ledger engine.
+//! ANBARR PAY ledger engine.
 //!
 //! The Rust component owns the double-entry ledger. Everything here is
 //! correctness-critical: amounts are integers, balances are derived, writes are
@@ -13,13 +13,14 @@ pub mod engine;
 /// Generated protobuf/gRPC code for the ledger contract. `build.rs` compiles
 /// `proto/ledger.proto` via protox (pure Rust — no system protoc needed).
 pub mod grpc_proto {
-    include!(concat!(env!("OUT_DIR"), "/amber.ledger.v1.rs"));
+    include!(concat!(env!("OUT_DIR"), "/anbarr.ledger.v1.rs"));
 }
 pub mod grpc;
 
 pub mod money;
 pub mod outbox;
 pub mod reconcile;
+pub mod sandbox;
 pub mod service;
 pub mod types;
 
@@ -34,6 +35,10 @@ pub use outbox::{EventAudit, EventWorker, LedgerEvent, LedgerEventConsumer};
 pub use reconcile::{
     AlertSink, Rail, RailStatementSource, ReconcileReport, ReconcileScheduler, ReconcileService,
     ReconcileTask,
+};
+pub use sandbox::{
+    SandboxPayment, SandboxRail, SandboxScenario, SandboxSource, SandboxWebhook, WebhookAcceptance,
+    SANDBOX_PAYMENT_LABEL, SANDBOX_REF_PREFIX,
 };
 pub use service::{LedgerService, TransferRequest, TransferResult};
 pub use types::{

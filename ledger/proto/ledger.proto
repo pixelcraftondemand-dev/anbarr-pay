@@ -8,7 +8,7 @@
 // `idempotency_scope`, `idempotency_key`, and `origin` (§8 note).
 syntax = "proto3";
 
-package amber.ledger.v1;
+package anbarr.ledger.v1;
 
 import "google/protobuf/timestamp.proto";
 

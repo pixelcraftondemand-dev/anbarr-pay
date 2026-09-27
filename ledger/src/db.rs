@@ -20,7 +20,7 @@ pub async fn run_migrations(pool: &PgPool) -> Result<(), sqlx::migrate::MigrateE
 
 /// Default local dev connection string (docker-compose.yml maps host 5433 -> container 5432).
 pub const DEFAULT_DATABASE_URL: &str =
-    "postgres://amber:amber_dev@localhost:5433/amber?sslmode=disable";
+    "postgres://anbarr:anbarr_dev@localhost:5433/anbarr?sslmode=disable";
 
 pub fn database_url_from_env() -> String {
     std::env::var("DATABASE_URL").unwrap_or_else(|_| DEFAULT_DATABASE_URL.to_string())

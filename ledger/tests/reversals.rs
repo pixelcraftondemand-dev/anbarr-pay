@@ -8,11 +8,11 @@
 
 mod common;
 
-use amber_ledger::engine::{
+use anbarr_ledger::engine::{
     EngineError, FeePolicy, LedgerEngine, PaymentRequest, RefundRequest, ReversalRequest,
 };
-use amber_ledger::money::Currency;
-use amber_ledger::types::{Direction, JournalSpec, JournalType, Leg, Origin};
+use anbarr_ledger::money::Currency;
+use anbarr_ledger::types::{Direction, JournalSpec, JournalType, Leg, Origin};
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -57,7 +57,7 @@ async fn post_payment(
 }
 
 async fn balance(p: &PgPool, account: Uuid) -> i64 {
-    amber_ledger::balances::get_balance(p, account)
+    anbarr_ledger::balances::get_balance(p, account)
         .await
         .unwrap()
         .available_minor
@@ -197,7 +197,7 @@ async fn hold_journal_is_not_reversible() {
     let escrow = platform_account(&p, "hold_escrow", Currency::Sle).await;
 
     let hold = engine
-        .hold_funds(amber_ledger::engine::HoldRequest {
+        .hold_funds(anbarr_ledger::engine::HoldRequest {
             idempotency_scope: "rev-test".into(),
             idempotency_key: "rev-hold".into(),
             account_id: payer,
@@ -225,7 +225,7 @@ async fn hold_journal_is_not_reversible() {
 
     // Clean up the shared escrow singleton via the proper path.
     engine
-        .release_hold(amber_ledger::engine::ReleaseRequest {
+        .release_hold(anbarr_ledger::engine::ReleaseRequest {
             idempotency_scope: "rev-test".into(),
             idempotency_key: "rev-hold-rel".into(),
             hold_id: hold.hold_id,

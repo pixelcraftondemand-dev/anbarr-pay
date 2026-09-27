@@ -1,4 +1,4 @@
--- AMBER PAY — ledger schema (owned by the Rust Ledger Service)
+-- ANBARR PAY — ledger schema (owned by the Rust Ledger Service)
 -- All monetary amounts are BIGINT minor units (2 dp). Never floats.
 
 CREATE TABLE accounts (

@@ -4,17 +4,23 @@
 //! test binaries in parallel against the same database.
 //!
 //! Requires the dev database (docker-compose.yml) —
-//! `postgres://amber:amber_dev@localhost:5433/amber`. Override with DATABASE_URL.
+//! `postgres://anbarr:anbarr_dev@localhost:5433/anbarr`. Override with DATABASE_URL.
 
-use amber_ledger::db;
-use amber_ledger::engine::LedgerEngine;
-use amber_ledger::money::Currency;
-use amber_ledger::types::{Direction, JournalSpec, JournalType, Leg, Origin};
+use anbarr_ledger::db;
+use anbarr_ledger::engine::LedgerEngine;
+use anbarr_ledger::money::Currency;
+use anbarr_ledger::types::{Direction, JournalSpec, JournalType, Leg, Origin};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 use uuid::Uuid;
 
+fn ensure_test_token() {
+    // Intentionally no implicit default token. The gRPC boundary should fail
+    // closed unless an explicit dev/test mode is enabled by the test itself.
+}
+
 pub async fn pool() -> PgPool {
+    ensure_test_token();
     let url = db::database_url_from_env();
     let schema = test_schema_name();
     ensure_schema(&url, schema).await;
@@ -70,12 +76,12 @@ fn with_search_path(url: &str, schema: &str) -> String {
 /// running them on every `pool()` is cheap and picks up new ones.
 pub async fn ensure_migrated(p: &PgPool) {
     let mut conn = p.acquire().await.expect("acquire connection");
-    sqlx::query("SELECT pg_advisory_lock(hashtext('amber_migrations'))")
+    sqlx::query("SELECT pg_advisory_lock(hashtext('anbarr_migrations'))")
         .execute(&mut *conn)
         .await
         .expect("advisory lock");
     db::run_migrations(p).await.expect("run migrations");
-    sqlx::query("SELECT pg_advisory_unlock(hashtext('amber_migrations'))")
+    sqlx::query("SELECT pg_advisory_unlock(hashtext('anbarr_migrations'))")
         .execute(&mut *conn)
         .await
         .expect("advisory unlock");

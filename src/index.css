@@ -1,0 +1,119 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #00685f;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #008378;
+  --color-on-primary-container: #f4fffc;
+  --color-primary-fixed: #89f5e7;
+  --color-primary-fixed-dim: #6bd8cb;
+  --color-on-primary-fixed: #00201d;
+  --color-on-primary-fixed-variant: #005049;
+  --color-inverse-primary: #6bd8cb;
+
+  --color-secondary: #006398;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #5bb8fe;
+  --color-on-secondary-container: #00476e;
+  --color-secondary-fixed: #cce5ff;
+  --color-secondary-fixed-dim: #93ccff;
+  --color-on-secondary-fixed: #001d31;
+  --color-on-secondary-fixed-variant: #004b73;
+
+  --color-tertiary: #006860;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #248279;
+  --color-on-tertiary-container: #f3fffc;
+  --color-tertiary-fixed: #9cf2e8;
+  --color-tertiary-fixed-dim: #80d5cb;
+  --color-on-tertiary-fixed: #00201d;
+  --color-on-tertiary-fixed-variant: #00504a;
+
+  --color-surface: #f9f9ff;
+  --color-surface-dim: #cddbf5;
+  --color-surface-bright: #f9f9ff;
+  --color-surface-variant: #d6e3fe;
+  --color-surface-tint: #006a61;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f0f3ff;
+  --color-surface-container: #e7eeff;
+  --color-surface-container-high: #dee8ff;
+  --color-surface-container-highest: #d6e3fe;
+
+  --color-on-surface: #0e1c2f;
+  --color-on-surface-variant: #3d4947;
+  --color-background: #f9f9ff;
+  --color-on-background: #0e1c2f;
+
+  --color-inverse-surface: #243145;
+  --color-inverse-on-surface: #ebf1ff;
+
+  --color-outline: #6d7a77;
+  --color-outline-variant: #bcc9c6;
+
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  --font-body-md: "Plus Jakarta Sans", sans-serif;
+  --font-body-lg: "Plus Jakarta Sans", sans-serif;
+  --font-body-sm: "Plus Jakarta Sans", sans-serif;
+  --font-label-md: "Plus Jakarta Sans", sans-serif;
+  --font-headline-sm: "Space Grotesk", sans-serif;
+  --font-headline-md: "Space Grotesk", sans-serif;
+  --font-headline-lg: "Space Grotesk", sans-serif;
+  --font-headline-lg-mobile: "Space Grotesk", sans-serif;
+  --font-display-hero: "Space Grotesk", sans-serif;
+  --font-display-hero-mobile: "Space Grotesk", sans-serif;
+  --font-ledger-number-md: "JetBrains Mono", monospace;
+  --font-ledger-number-lg: "JetBrains Mono", monospace;
+  --font-label-code: "JetBrains Mono", monospace;
+
+  --spacing-space-xs: 0.25rem;
+  --spacing-space-sm: 0.5rem;
+  --spacing-space-md: 1rem;
+  --spacing-space-lg: 1.5rem;
+  --spacing-space-xl: 2.5rem;
+  --spacing-margin-sm: 1rem;
+  --spacing-margin: 2rem;
+  --spacing-gutter-sm: 1rem;
+  --spacing-gutter: 1.5rem;
+}
+
+@layer base {
+  html, body {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9ff;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: #0e1c2f;
+  }
+  body {
+    overscroll-behavior: none;
+  }
+}
+
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+}
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top, 0px), 8px);
+}
+
+.text-body-md { font-size: 15px; line-height: 22px; font-weight: 400; }
+.text-body-lg { font-size: 18px; line-height: 28px; font-weight: 400; }
+.text-body-sm { font-size: 13px; line-height: 18px; font-weight: 400; }
+.text-label-md { font-size: 12px; line-height: 16px; letter-spacing: 0.04em; font-weight: 600; }
+.text-label-code { font-size: 11px; line-height: 14px; letter-spacing: 0.05em; font-weight: 500; font-family: 'JetBrains Mono', monospace; }
+.text-headline-sm { font-size: 18px; line-height: 24px; font-weight: 600; font-family: 'Space Grotesk', sans-serif; }
+.text-headline-md { font-size: 24px; line-height: 32px; letter-spacing: -0.01em; font-weight: 600; font-family: 'Space Grotesk', sans-serif; }
+.text-headline-lg-mobile { font-size: 24px; line-height: 32px; letter-spacing: -0.01em; font-weight: 600; font-family: 'Space Grotesk', sans-serif; }
+.text-display-hero-mobile { font-size: 32px; line-height: 40px; letter-spacing: -0.02em; font-weight: 700; font-family: 'Space Grotesk', sans-serif; }
+.text-ledger-number-md { font-size: 16px; line-height: 22px; letter-spacing: -0.01em; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+.text-ledger-number-lg { font-size: 28px; line-height: 36px; letter-spacing: -0.03em; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+
+::-webkit-scrollbar {
+  display: none;
+}

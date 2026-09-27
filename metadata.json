@@ -1,0 +1,6 @@
+{
+  "name": "Anbarr Pay",
+  "description": "Unified payments, multi-account ledger, virtual cards, and instant settlement in Freetown, Sierra Leone.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

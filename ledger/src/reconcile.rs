@@ -357,10 +357,13 @@ impl ReconcileService {
         until: DateTime<Utc>,
     ) -> Result<Vec<LedgerRef>, ReconcileError> {
         let rows = sqlx::query_as::<_, (Uuid, String, String, i64, DateTime<Utc>)>(
+            // Sign convention: the platform view (+ = platform received),
+            // matching `StatementLine.amount_minor`. An inbound payment debits
+            // the rail_bridge (source of funds), so debit = +, credit = −.
             "SELECT j.id,
                     j.payment_code,
                     j.type,
-                    CASE WHEN e.direction = 'credit' THEN e.amount_minor ELSE -e.amount_minor END,
+                    CASE WHEN e.direction = 'debit' THEN e.amount_minor ELSE -e.amount_minor END,
                     j.created_at
              FROM journals j
              JOIN entries e ON e.journal_id = j.id
@@ -420,8 +423,10 @@ impl ReconcileService {
             return Ok(None);
         }
         let movement: i64 = sqlx::query_scalar(
+            // Platform view, matching `StatementLine` and `fetch_ledger_refs`:
+            // debit = + (platform received), credit = − (platform paid out).
             "SELECT COALESCE(
-                      SUM(CASE WHEN e.direction = 'credit' THEN e.amount_minor ELSE -e.amount_minor END),
+                      SUM(CASE WHEN e.direction = 'debit' THEN e.amount_minor ELSE -e.amount_minor END),
                       0)::bigint
              FROM entries e
              JOIN accounts a ON a.id = e.account_id

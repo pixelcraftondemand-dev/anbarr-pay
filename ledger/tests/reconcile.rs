@@ -58,16 +58,16 @@ fn all_lines_match_and_position_balances() {
         Currency::Sle,
         start,
         end,
-        &[line("R1", -5_000), line("R2", -7_000)],
-        &[ledger_ref("R1", -5_000), ledger_ref("R2", -7_000)],
-        Some(-12_000),
+        &[line("R1", 5_000), line("R2", 7_000)],
+        &[ledger_ref("R1", 5_000), ledger_ref("R2", 7_000)],
+        Some(12_000),
     );
     assert_eq!(report.status, ReconcileStatus::Balanced);
     assert_eq!(report.matched, 2);
     assert_eq!(report.statement_count, 2);
     assert_eq!(report.ledger_count, 2);
-    assert_eq!(report.statement_total_minor, -12_000);
-    assert_eq!(report.ledger_total_minor, -12_000);
+    assert_eq!(report.statement_total_minor, 12_000);
+    assert_eq!(report.ledger_total_minor, 12_000);
     assert!(report.unmatched_on_ledger.is_empty());
     assert!(report.unmatched_on_rail.is_empty());
     assert!(report.amount_mismatches.is_empty());
@@ -82,9 +82,9 @@ fn statement_line_without_journal_is_drift() {
         Currency::Sle,
         start,
         end,
-        &[line("R1", -5_000), line("R9", -100)],
-        &[ledger_ref("R1", -5_000)],
-        Some(-5_100),
+        &[line("R1", 5_000), line("R9", 100)],
+        &[ledger_ref("R1", 5_000)],
+        Some(5_100),
     );
     assert!(matches!(report.status, ReconcileStatus::Drift { .. }));
     assert_eq!(report.unmatched_on_rail.len(), 1);
@@ -100,9 +100,9 @@ fn journal_without_statement_line_is_drift() {
         Currency::Sle,
         start,
         end,
-        &[line("R1", -5_000)],
-        &[ledger_ref("R1", -5_000), ledger_ref("R2", -7_000)],
-        Some(-12_000),
+        &[line("R1", 5_000)],
+        &[ledger_ref("R1", 5_000), ledger_ref("R2", 7_000)],
+        Some(12_000),
     );
     assert!(matches!(report.status, ReconcileStatus::Drift { .. }));
     assert_eq!(report.unmatched_on_ledger.len(), 1);
@@ -118,15 +118,15 @@ fn amount_mismatch_is_grouped_not_unmatched() {
         Currency::Sle,
         start,
         end,
-        &[line("R1", -5_000)],
-        &[ledger_ref("R1", -5_500)], // same ref, different amount
-        Some(-5_500),
+        &[line("R1", 5_000)],
+        &[ledger_ref("R1", 5_500)], // same ref, different amount
+        Some(5_500),
     );
     assert!(matches!(report.status, ReconcileStatus::Drift { .. }));
     assert_eq!(report.amount_mismatches.len(), 1);
     assert_eq!(report.amount_mismatches[0].reference, "R1");
-    assert_eq!(report.amount_mismatches[0].statement_minor, -5_000);
-    assert_eq!(report.amount_mismatches[0].ledger_minor, -5_500);
+    assert_eq!(report.amount_mismatches[0].statement_minor, 5_000);
+    assert_eq!(report.amount_mismatches[0].ledger_minor, 5_500);
     assert_eq!(report.matched, 0);
     assert!(
         report.unmatched_on_rail.is_empty(),
@@ -146,8 +146,8 @@ fn duplicate_reference_is_flagged() {
         Currency::Sle,
         start,
         end,
-        &[line("R1", -5_000)],
-        &[ledger_ref("R1", -5_000), ledger_ref("R1", -2_000)], // same code twice
+        &[line("R1", 5_000)],
+        &[ledger_ref("R1", 5_000), ledger_ref("R1", -2_000)], // same code twice
         Some(-7_000),
     );
     assert!(matches!(report.status, ReconcileStatus::Drift { .. }));
@@ -169,9 +169,9 @@ fn bridge_position_mismatch_is_drift() {
         Currency::Sle,
         start,
         end,
-        &[line("R1", -5_000)],
-        &[ledger_ref("R1", -5_000)],
-        Some(-5_500),
+        &[line("R1", 5_000)],
+        &[ledger_ref("R1", 5_000)],
+        Some(4_500),
     );
     assert!(matches!(
         report.status,
@@ -190,8 +190,8 @@ fn no_bridge_account_reports_none_and_still_balances_lines() {
         Currency::Sle,
         start,
         end,
-        &[line("R1", -5_000)],
-        &[ledger_ref("R1", -5_000)],
+        &[line("R1", 5_000)],
+        &[ledger_ref("R1", 5_000)],
         None,
     );
     assert_eq!(report.bridge_movement_minor, None);
@@ -259,7 +259,7 @@ async fn service_balanced_end_to_end() {
     post_rail_tied(&engine, bridge, wallet, "rc-e2e-2", "OM-REF-2", 7_000).await;
 
     let source = RailStatementSource::Stub {
-        lines: vec![line("OM-REF-1", -5_000), line("OM-REF-2", -7_000)],
+        lines: vec![line("OM-REF-1", 5_000), line("OM-REF-2", 7_000)],
     };
     let service = ReconcileService::new(p.clone());
     let (start, end) = window();
@@ -272,7 +272,7 @@ async fn service_balanced_end_to_end() {
     assert_eq!(report.matched, 2);
     assert_eq!(report.statement_count, 2);
     assert_eq!(report.ledger_count, 2);
-    assert_eq!(report.bridge_movement_minor, Some(-12_000));
+    assert_eq!(report.bridge_movement_minor, Some(12_000));
     assert!(report.unmatched_on_rail.is_empty());
     assert!(report.unmatched_on_ledger.is_empty());
 }
@@ -290,7 +290,7 @@ async fn service_detects_statement_line_without_journal() {
 
     // The rail reports an extra 100 that the ledger never saw.
     let source = RailStatementSource::Stub {
-        lines: vec![line("OM-REF-1", -5_000), line("OM-REF-9", -100)],
+        lines: vec![line("OM-REF-1", 5_000), line("OM-REF-9", 100)],
     };
     let service = ReconcileService::new(p.clone());
     let (start, end) = window();
@@ -340,7 +340,7 @@ async fn scheduler_records_balanced_run_in_db() {
     let scheduler = scheduler_with_source(
         &p,
         RailStatementSource::Stub {
-            lines: vec![line("OM-REF-1", -5_000)],
+            lines: vec![line("OM-REF-1", 5_000)],
         },
     )
     .await;
@@ -375,7 +375,7 @@ async fn scheduler_records_drift_run_and_alerts() {
     let scheduler = scheduler_with_source(
         &p,
         RailStatementSource::Stub {
-            lines: vec![line("OM-REF-1", -5_000), line("OM-REF-9", -100)],
+            lines: vec![line("OM-REF-1", 5_000), line("OM-REF-9", 100)],
         },
     )
     .await;
@@ -406,8 +406,8 @@ async fn log_sink_accepts_reports_without_error() {
         Currency::Sle,
         start,
         end,
-        &[line("R1", -5_000)],
-        &[ledger_ref("R1", -5_000)],
+        &[line("R1", 5_000)],
+        &[ledger_ref("R1", 5_000)],
         Some(-5_000),
     );
     sink.report(&balanced)
@@ -419,9 +419,9 @@ async fn log_sink_accepts_reports_without_error() {
         Currency::Sle,
         start,
         end,
-        &[line("R1", -5_000), line("R9", -100)],
-        &[ledger_ref("R1", -5_000)],
-        Some(-5_100),
+        &[line("R1", 5_000), line("R9", 100)],
+        &[ledger_ref("R1", 5_000)],
+        Some(5_100),
     );
     sink.report(&drift).await.expect("log sink accepts drift");
 }
@@ -503,7 +503,7 @@ async fn scheduler_keeps_running_when_sink_fails() {
     let scheduler = ReconcileScheduler::new(
         ReconcileService::new(p.clone()),
         RailStatementSource::Stub {
-            lines: vec![line("OM-REF-1", -5_000)],
+            lines: vec![line("OM-REF-1", 5_000)],
         },
         AlertSink::Db {
             pool: closed_pool().await,
@@ -560,7 +560,7 @@ async fn scheduler_spawn_ticks_and_shuts_down_on_signal() {
     let scheduler = ReconcileScheduler::new(
         ReconcileService::new(p.clone()),
         RailStatementSource::Stub {
-            lines: vec![line("OM-REF-1", -5_000)],
+            lines: vec![line("OM-REF-1", 5_000)],
         },
         AlertSink::Db { pool: p.clone() },
         vec![ReconcileTask {

@@ -25,7 +25,7 @@ async fn setup_two_parties(
     // Recipient links a wallet first (receives), then the sender's wallet is
     // created + funded and linked (it becomes their primary automatically).
     let recipient_wallet =
-        create_funded_wallet(&h.ledger_pool, amber_ledger::money::Currency::Sle, 1_000).await;
+        create_funded_wallet(&h.ledger_pool, anbarr_ledger::money::Currency::Sle, 1_000).await;
     let (status, body) = request_json(
         &h.app,
         "POST",
@@ -38,7 +38,7 @@ async fn setup_two_parties(
 
     let sender_wallet = create_funded_wallet(
         &h.ledger_pool,
-        amber_ledger::money::Currency::Sle,
+        anbarr_ledger::money::Currency::Sle,
         funding_minor,
     )
     .await;

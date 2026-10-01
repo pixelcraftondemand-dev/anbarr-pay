@@ -64,12 +64,12 @@ docker compose up -d
 cargo test
 ```
 
-The tests use `postgres://amber:amber_dev@localhost:5433/amber` by default;
+The tests use `postgres://anbarr:anbarr_dev@localhost:5433/anbarr` by default;
 override with `DATABASE_URL` (see below). Each test binary runs in its own
 Postgres **schema** (`test_<binary>` via `search_path`), so the parallel
 binaries never step on each other's shared singleton accounts
 (`ledger/tests/common/mod.rs`). The core-api tests additionally use the
-`amber_core_test` database (created on the fly) for app metadata — the
+`anbarr_core_test` database (created on the fly) for app metadata — the
 boundary under test.
 
 ### Core API (vault endpoints)
@@ -80,7 +80,7 @@ through the ledger's gRPC contract — it never writes ledger tables.
 
 ```bash
 # 0. One-time: the core metadata database (init script also does this)
-docker exec amber-postgres psql -U amber -c 'CREATE DATABASE amber_core'
+docker exec anbarr-postgres psql -U anbarr -c 'CREATE DATABASE anbarr_core'
 
 # 1. Start the ledger gRPC server (terminal 1)
 cargo run -p anbarr-ledger
@@ -98,7 +98,7 @@ Endpoints (contract in `docs/api.md` §6b/§6c and `docs/vault.md`):
 - `POST /v1/vault/goals/{id}/release` — unlock (whole holds, `ReleaseHold`)
 
 Until sign-in ships, the gateway (or a test) names the caller with the
-`x-amber-caller` header; this is a development configuration — do not deploy
+`x-anbarr-caller` header; this is a development configuration — do not deploy
 publicly.
 
 ## Web client (React)
@@ -117,10 +117,10 @@ The SPA is a thin view layer only (no financial logic, no secrets) — see
 
 | Variable      | Required | Default (dev)                                                        | Description                                  |
 | ------------- | -------- | -------------------------------------------------------------------- | -------------------------------------------- |
-| `DATABASE_URL`| dev-only | `postgres://amber:amber_dev@localhost:5433/amber?sslmode=disable`    | Postgres connection string (migrations + tests). In CI this points at the disposable `postgres:16` service container. |
-| `CORE_DATABASE_URL` | dev-only | `postgres://amber:amber_dev@localhost:5433/amber_core?sslmode=disable` | Core API metadata database (wallet links, vault goals). |
+| `DATABASE_URL`| dev-only | `postgres://anbarr:anbarr_dev@localhost:5433/anbarr?sslmode=disable`    | Postgres connection string (migrations + tests). In CI this points at the disposable `postgres:16` service container. |
+| `CORE_DATABASE_URL` | dev-only | `postgres://anbarr:anbarr_dev@localhost:5433/anbarr_core?sslmode=disable` | Core API metadata database (wallet links, vault goals). |
 | `LEDGER_ENDPOINT` | no | `http://127.0.0.1:50051` | Ledger gRPC address the Core API calls. |
-| `LEDGER_GRPC_TOKEN` | deploy | `amberpay-internal-dev` | Shared secret presented as `x-ledger-token`. Real value from the secrets manager. |
+| `LEDGER_GRPC_TOKEN` | deploy | `anbarr-internal-dev` | Shared secret presented as `x-ledger-token`. Real value from the secrets manager. |
 | `CORE_API_ADDR` | no | `127.0.0.1:8080` | Core API REST listen address. |
 
 Placeholders only — no real credentials are ever committed. Production

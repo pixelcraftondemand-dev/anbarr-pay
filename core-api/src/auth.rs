@@ -41,7 +41,7 @@ const OTP_MAX_ATTEMPTS: i32 = 5;
 /// OTP re-issue rate limit (§4: max ~3 per 10 min).
 const OTP_ISSUE_MAX: i64 = 3;
 
-/// The authenticated principal. Extractors replace the old `x-amber-caller`
+/// The authenticated principal. Extractors replace the old `x-anbarr-caller`
 /// dev header everywhere: handlers now take `caller: Caller` and never see
 /// transport headers at all.
 #[derive(Debug, Clone)]
@@ -53,24 +53,24 @@ pub struct Caller {
 /// OTP echo in dev. Delivery providers are a deployment concern (SMS gateway
 /// / WhatsApp sender per docs/authentication.md §12 open items); until one
 /// is configured, the code is written to the server log only when
-/// `AMBER_DEV_OTP_LOG=1`, and returned in the response when
-/// `AMBER_DEV_OTP_ECHO=1` — dev builds, never production.
+/// `ANBARR_DEV_OTP_LOG=1`, and returned in the response when
+/// `ANBARR_DEV_OTP_ECHO=1` — dev builds, never production.
 fn otp_echo_enabled() -> bool {
-    std::env::var("AMBER_DEV_OTP_ECHO").ok().as_deref() == Some("1")
+    std::env::var("ANBARR_DEV_OTP_ECHO").ok().as_deref() == Some("1")
 }
 
 fn dev_otp_log_enabled() -> bool {
-    std::env::var("AMBER_DEV_OTP_LOG").ok().as_deref() == Some("1")
+    std::env::var("ANBARR_DEV_OTP_LOG").ok().as_deref() == Some("1")
 }
 
 /// HMAC-SHA256 over the token with a server-side secret. Access tokens are
 /// `user_id.expiry_unix.sig` — stateless and verifiable without a DB hit;
 /// refresh tokens are 32 random bytes, opaque, and only ever stored hashed.
 fn signing_key() -> Vec<u8> {
-    let secret = std::env::var("AMBER_AUTH_SECRET")
-        .unwrap_or_else(|_| "amberpay-dev-auth-secret-do-not-deploy".to_string());
+    let secret = std::env::var("ANBARR_AUTH_SECRET")
+        .unwrap_or_else(|_| "anbarr-dev-auth-secret-do-not-deploy".to_string());
     // Domain-separate from any future use of the same env var.
-    Sha256::digest(format!("amber.auth.v1.{secret}").as_bytes()).to_vec()
+    Sha256::digest(format!("anbarr.auth.v1.{secret}").as_bytes()).to_vec()
 }
 
 fn sign(data: &[u8]) -> Vec<u8> {
@@ -527,7 +527,7 @@ pub struct OtpRequestRequest {
 pub struct OtpResponse {
     pub sent: bool,
     pub expires_in: i64,
-    /// Present only when `AMBER_DEV_OTP_ECHO=1` (dev builds) — the code is
+    /// Present only when `ANBARR_DEV_OTP_ECHO=1` (dev builds) — the code is
     /// never echoed by a production configuration.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dev_code: Option<String>,

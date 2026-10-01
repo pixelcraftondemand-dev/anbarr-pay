@@ -1,6 +1,6 @@
 //! Authentication integration tests (goal 1 of docs/roadmap.md): the real
 //! OTP → session flow over the router, with the OTP echoed via the dev-only
-//! channel (`AMBER_DEV_OTP_ECHO=1`, set by the harness). Covers docs/
+//! channel (`ANBARR_DEV_OTP_ECHO=1`, set by the harness). Covers docs/
 //! authentication.md §3 (sessions, rotation, reuse detection) and the §10.1
 //! find-or-create sign-in flow.
 //!

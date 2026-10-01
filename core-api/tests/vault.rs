@@ -1,7 +1,7 @@
 //! Vault goal savings over the real stack (goal savings = metadata over
 //! ledger holds, docs/vault.md). The caller is now an authenticated user —
 //! every request carries a bearer access token minted through the real OTP
-//! flow (see tests/auth.rs); no `x-amber-caller` header exists anymore.
+//! flow (see tests/auth.rs); no `x-anbarr-caller` header exists anymore.
 //!
 //! Requires the dev database (docker-compose.yml).
 

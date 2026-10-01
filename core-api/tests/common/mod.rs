@@ -4,17 +4,17 @@
 //! contract the deployed services use, with no mocks on the money path.
 //!
 //! Each test binary passes its own ledger schema + core database name
-//! (`harness("amber_core_test_<binary>")`), so parallel binaries never step
+//! (`harness("anbarr_core_test_<binary>")`), so parallel binaries never step
 //! on each other's state — the core-side analogue of the ledger tests'
 //! per-binary schemas.
 //!
 //! Requires the dev database (docker-compose.yml).
 
-use amber_ledger::db;
-use amber_ledger::engine::LedgerEngine;
-use amber_ledger::grpc::LedgerGrpc;
 use anbarr_core_api::ledger::pb::ledger_server::LedgerServer;
 use anbarr_core_api::{create_app, AppState, LedgerClient};
+use anbarr_ledger::db;
+use anbarr_ledger::engine::LedgerEngine;
+use anbarr_ledger::grpc::LedgerGrpc;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use serde_json::{json, Value};
@@ -78,7 +78,7 @@ async fn ledger_stack(schema: &str) -> (PgPool, LedgerClient) {
         .connect(&schema_url)
         .await
         .expect("connect ledger pool");
-    amber_ledger::db::run_migrations(&pool)
+    anbarr_ledger::db::run_migrations(&pool)
         .await
         .expect("ledger migrations");
 
@@ -117,7 +117,7 @@ async fn ledger_stack(schema: &str) -> (PgPool, LedgerClient) {
             let channel = tonic::transport::Channel::from_shared(addr_uri.clone())
                 .expect("uri")
                 .connect_lazy();
-            let inner = amber_ledger::grpc_proto::ledger_client::LedgerClient::new(channel);
+            let inner = anbarr_ledger::grpc_proto::ledger_client::LedgerClient::new(channel);
             let candidate = LedgerClient::new(inner, "test-token".to_string());
             match candidate
                 .health_check(std::time::Duration::from_millis(100))
@@ -145,7 +145,7 @@ async fn ledger_stack(schema: &str) -> (PgPool, LedgerClient) {
 async fn core_pool(db_name: &str) -> PgPool {
     let admin = PgPoolOptions::new()
         .max_connections(1)
-        .connect("postgres://amber:amber_dev@localhost:5433/postgres?sslmode=disable")
+        .connect("postgres://anbarr:anbarr_dev@localhost:5433/postgres?sslmode=disable")
         .await
         .expect("connect admin postgres");
     // Postgres has no CREATE DATABASE IF NOT EXISTS; ignore the duplicate
@@ -161,7 +161,7 @@ async fn core_pool(db_name: &str) -> PgPool {
         .expect("create core test database");
     admin.close().await;
 
-    let url = format!("postgres://amber:amber_dev@localhost:5433/{db_name}?sslmode=disable");
+    let url = format!("postgres://anbarr:anbarr_dev@localhost:5433/{db_name}?sslmode=disable");
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&url)
@@ -181,11 +181,11 @@ async fn core_pool(db_name: &str) -> PgPool {
 
 /// Full stack: ledger gRPC + core DB + router, **fully isolated per test**:
 /// each test passes a unique `tag` and gets its own core database
-/// (`amber_core_test_<tag>`) and ledger schema (`test_core_api_<tag>`), so
+/// (`anbarr_core_test_<tag>`) and ledger schema (`test_core_api_<tag>`), so
 /// parallel tests never share or truncate each other's state — the same
 /// isolation philosophy as the ledger tests' per-binary schemas.
 ///
-/// `AMBER_DEV_OTP_ECHO=1` is set process-wide so `sign_in` can read the code
+/// `ANBARR_DEV_OTP_ECHO=1` is set process-wide so `sign_in` can read the code
 /// from the response (dev-only channel — production must never echo codes).
 pub async fn harness(tag: &str) -> TestHarness {
     use std::sync::atomic::{AtomicU32, Ordering};
@@ -193,9 +193,9 @@ pub async fn harness(tag: &str) -> TestHarness {
     let n = N.fetch_add(1, Ordering::SeqCst);
     // Unique-per-call names: parallel tests never share a database or schema.
     let unique = format!("{tag}_{n}");
-    std::env::set_var("AMBER_DEV_OTP_ECHO", "1");
+    std::env::set_var("ANBARR_DEV_OTP_ECHO", "1");
     let (ledger_pool, ledger) = ledger_stack(&format!("test_core_api_{unique}")).await;
-    let core = core_pool(&format!("amber_core_test_{unique}")).await;
+    let core = core_pool(&format!("anbarr_core_test_{unique}")).await;
     let state = AppState::new(
         core.clone(),
         ledger,
@@ -224,7 +224,7 @@ pub async fn sign_in(app: &axum::Router, phone: &str, display_name: &str) -> (St
     assert_eq!(status, StatusCode::OK, "{body}");
     let code = body["dev_code"]
         .as_str()
-        .expect("dev_code present (AMBER_DEV_OTP_ECHO=1)")
+        .expect("dev_code present (ANBARR_DEV_OTP_ECHO=1)")
         .to_string();
 
     let (status, body) = request_json(
@@ -317,10 +317,10 @@ pub async fn request_json_with_headers(
 #[allow(dead_code)]
 pub async fn create_funded_wallet(
     pool: &PgPool,
-    currency: amber_ledger::money::Currency,
+    currency: anbarr_ledger::money::Currency,
     amount: i64,
 ) -> Uuid {
-    use amber_ledger::types::{Direction, JournalSpec, JournalType, Leg, Origin};
+    use anbarr_ledger::types::{Direction, JournalSpec, JournalType, Leg, Origin};
     let wallet = Uuid::new_v4();
     sqlx::query(
         "INSERT INTO accounts (id, owner_type, owner_id, type, currency, name, status)

@@ -1,11 +1,11 @@
-//! AMBER PAY Core API — the application-domain service boundary.
+//! ANBARR PAY Core API — the application-domain service boundary.
 //!
 //! Per docs/architecture.md the Core API owns everything that is I/O-bound
 //! and state-machine-heavy around the money, while the Rust ledger remains
 //! the *only* writer of ledger tables. This crate implements that split in
 //! one workspace for operability: its Postgres database (app metadata:
 //! goals, wallet registry) is separate from the ledger's, and every money
-//! movement goes through the ledger's gRPC contract (`amber.ledger.v1`).
+//! movement goes through the ledger's gRPC contract (`anbarr.ledger.v1`).
 //!
 //! Components:
 //! - `db` — core-database pool + migrations (`core-api/migrations`)

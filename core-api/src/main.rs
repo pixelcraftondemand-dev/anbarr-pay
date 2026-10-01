@@ -1,4 +1,4 @@
-//! AMBER PAY Core API server binary.
+//! ANBARR PAY Core API server binary.
 //!
 //! Owns app-domain data (vault goals, the wallet registry) in its own
 //! database and drives money movement through the ledger's gRPC contract.
@@ -24,7 +24,7 @@ async fn main() -> anyhow::Result<()> {
     let ledger_endpoint =
         std::env::var("LEDGER_ENDPOINT").unwrap_or_else(|_| "http://127.0.0.1:50051".to_string());
     let ledger_token =
-        std::env::var("LEDGER_GRPC_TOKEN").unwrap_or_else(|_| "amberpay-internal-dev".to_string());
+        std::env::var("LEDGER_GRPC_TOKEN").unwrap_or_else(|_| "anbarr-internal-dev".to_string());
     let channel = tonic::transport::Channel::from_shared(ledger_endpoint.clone())?.connect_lazy();
     let inner = anbarr_core_api::ledger::pb::ledger_client::LedgerClient::new(channel);
     let ledger = LedgerClient::new(inner, ledger_token);

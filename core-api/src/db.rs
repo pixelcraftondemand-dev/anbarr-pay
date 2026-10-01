@@ -26,7 +26,7 @@ pub async fn run_migrations(pool: &PgPool) -> Result<(), sqlx::migrate::MigrateE
 /// server as the ledger, different database — the boundary is enforced by
 /// roles in deployment, and by separate metadata in tests.
 pub const DEFAULT_CORE_DATABASE_URL: &str =
-    "postgres://amber:amber_dev@localhost:5433/amber_core?sslmode=disable";
+    "postgres://anbarr:anbarr_dev@localhost:5433/anbarr_core?sslmode=disable";
 
 pub fn core_database_url_from_env() -> String {
     std::env::var("CORE_DATABASE_URL").unwrap_or_else(|_| DEFAULT_CORE_DATABASE_URL.to_string())

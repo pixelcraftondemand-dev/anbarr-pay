@@ -1,0 +1,130 @@
+name: CI
+
+on:
+  push:
+    # main = release (protected, PRs only); staging = pre-review integration
+    # where feature branches land first and the AI review runs (see
+    # docs/engineering-standards.md §4).
+    branches: [main, staging]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # Stage 1: cheapest checks first — formatting and linting, seconds to run.
+  lint:
+    name: fmt + clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Format check (cargo fmt --check)
+        run: cargo fmt --check
+      - name: Lint (cargo clippy, warnings are errors)
+        run: cargo clippy --all-targets -- -D warnings
+
+  # Stage 2: type check, then unit + integration tests against a real Postgres
+  # (the "Testcontainers" step for Rust — a disposable postgres:16 container).
+  test:
+    name: check + tests
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://amber:amber_dev@localhost:5432/amber?sslmode=disable
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: amber
+          POSTGRES_PASSWORD: amber_dev
+          POSTGRES_DB: amber
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U amber -d amber"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Type check (cargo check)
+        run: cargo check --all-targets
+      - name: Unit + property tests (no DB)
+        run: cargo test --lib --test properties
+      - name: Integration tests (real Postgres)
+        run: cargo test --tests
+
+  # Stage 3: build (release) — catches link/optimization-level issues.
+  build:
+    name: build (release)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: cargo build --release
+        run: cargo build --release --locked
+
+  # Stage 4: coverage. The ledger/transaction/balance code path (engine,
+  # balances, money, reconcile) has the highest bar in the repo — see
+  # .github/scripts/check_core_coverage.py.
+  coverage:
+    name: coverage (core modules >= 85%)
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgres://amber:amber_dev@localhost:5432/amber?sslmode=disable
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: amber
+          POSTGRES_PASSWORD: amber_dev
+          POSTGRES_DB: amber
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U amber -d amber"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Run coverage (full suite, lcov)
+        run: cargo llvm-cov --all-targets --fail-under-lines 80 --lcov --output-path lcov.info
+      - name: Check core-module coverage bar (>= 85%)
+        run: python3 .github/scripts/check_core_coverage.py lcov.info
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: lcov.info
+          path: lcov.info
+
+  # Stage 5: security — dependency audit (fails on High/Critical CVEs) and
+  # secret scanning over full git history (gitleaks).
+  security:
+    name: audit + gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so gitleaks scans every commit
+      - uses: taiki-e/install-action@cargo-audit
+      - name: cargo audit (fail on High/Critical, per .cargo/audit.toml)
+        run: cargo audit
+      - uses: taiki-e/install-action@gitleaks
+      - name: gitleaks — full git history
+        run: gitleaks git --exit-code --redact --log-opts="--all --full-history" .

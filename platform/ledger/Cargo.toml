@@ -1,0 +1,40 @@
+[package]
+name = "anbarr-ledger"
+version = "0.1.0"
+edition = "2021"
+description = "ANBARR PAY double-entry ledger engine (Rust)"
+build = "build.rs"
+
+[dependencies]
+anyhow = "1"
+axum = "0.7"
+chrono = { version = "0.4", features = ["serde"] }
+hex = "0.4"
+hmac = "0.12"
+sha2 = "0.10"
+prost = "0.13"
+prost-types = "0.13"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate"] }
+tonic = "0.12"
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
+tower = "0.5"
+uuid = { version = "1", features = ["v4", "serde"] }
+
+[dev-dependencies]
+proptest = "1"
+tower = { version = "0.5", features = ["util"] }
+
+# Inherited from the workspace (see root Cargo.toml for the rationale):
+# tonic::Status is ~176 bytes and the generated Ledger trait fixes handler
+# signatures, so clippy::result_large_err is allowed at the gRPC boundary.
+[lints]
+workspace = true
+
+[build-dependencies]
+prost = "0.13"
+protox = "0.7"
+tonic-build = "0.12"

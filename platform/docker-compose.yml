@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: anbarr-postgres
+    environment:
+      POSTGRES_USER: anbarr
+      POSTGRES_PASSWORD: anbarr_dev
+      POSTGRES_DB: anbarr
+    ports:
+      - "5433:5432"   # 5432 is taken by an existing local Postgres container
+    volumes:
+      - anbarr_pgdata:/var/lib/postgresql/data
+      # The Core API's metadata database is created on first boot (the ledger
+      # db `anbarr` is POSTGRES_DB). Boundary: ledger tables live only in
+      # `anbarr`; core metadata (wallet links, vault goals) lives only in
+      # `anbarr_core` — enforced by roles in deployment.
+      - ./docker/init-core-db.sql:/docker-entrypoint-initdb.d/10-core-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U anbarr -d anbarr"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  anbarr_pgdata:

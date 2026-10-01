@@ -1,0 +1,8 @@
+# cargo-audit configuration (used by CI and `cargo audit` locally).
+#
+# PixelCraft standard: dependency vulnerability scanning on every PR plus
+# nightly. We fail the build only on High/Critical CVEs; lower-severity and
+# informational advisories (unmaintained, unsound, yanked) are reported as
+# warnings without blocking — upgrade them on the normal cadence instead.
+[advisories]
+severity_threshold = "high"

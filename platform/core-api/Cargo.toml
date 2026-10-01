@@ -1,0 +1,36 @@
+[package]
+name = "anbarr-core-api"
+version = "0.1.0"
+edition = "2021"
+description = "AMBER PAY Core API — REST boundary for app-domain data (vault goals, wallet registry). Money movement itself stays in the ledger service; this crate drives it via the ledger's gRPC contract and never touches ledger tables."
+
+[dependencies]
+anyhow = "1"
+axum = "0.7"
+chrono = { version = "0.4", features = ["serde"] }
+prost = "0.13"
+prost-types = "0.13"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+hmac = "0.12"
+subtle = "2"
+hex = "0.4"
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate"] }
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+tonic = "0.12"
+tower = "0.5"
+tracing = "0.1"
+uuid = { version = "1", features = ["v4", "serde"] }
+rand = "0.8"
+
+# The generated ledger protobuf client (same contract, no duplicate .proto).
+anbarr-ledger = { path = "../ledger" }
+reqwest = { version = "0.13.5", features = ["json", "rustls"] }
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+
+[lints]
+workspace = true

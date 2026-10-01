@@ -1,0 +1,13 @@
+/target
+/.env
+*.env
+.idea/
+.vscode/
+
+# Web client (web/)
+web/node_modules/
+web/dist/
+web/.env
+web/.env.local
+web/.env.*.local
+.aider*

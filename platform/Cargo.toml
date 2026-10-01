@@ -1,0 +1,14 @@
+[workspace]
+resolver = "2"
+members = ["ledger", "core-api"]
+
+# tonic::Status is ~176 bytes, so every gRPC handler / mapper signature that
+# returns Result<_, Status> trips clippy::result_large_err. The trait contract
+# (tonic's generated Ledger trait) fixes these signatures — boxing Status would
+# mean re-wrapping every handler for no real gain (the status is constructed
+# once per call at the boundary, never passed around hot loops).
+[workspace.lints.clippy]
+result_large_err = "allow"
+
+[profile.release]
+lto = true

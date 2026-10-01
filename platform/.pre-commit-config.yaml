@@ -1,0 +1,30 @@
+# PixelCraft standards: format + lint + quick tests before every commit.
+# Install once:  pip install pre-commit && pre-commit install
+# Run manually:  pre-commit run --all-files
+#
+# Hooks are local so they use the repo's exact commands and need no network
+# fetch at commit time. The full suite (integration tests, coverage, audit,
+# gitleaks) runs in CI — see .github/workflows/ci.yml.
+repos:
+  - repo: local
+    hooks:
+      - id: fmt
+        name: cargo fmt (format check)
+        entry: cargo fmt --check
+        language: system
+        files: '\.rs$'
+        pass_filenames: false
+
+      - id: clippy
+        name: cargo clippy (warnings as errors)
+        entry: cargo clippy --all-targets -- -D warnings
+        language: system
+        files: '\.rs$'
+        pass_filenames: false
+
+      - id: test-quick
+        name: cargo test (unit + property, no DB)
+        entry: cargo test --lib --test properties
+        language: system
+        files: '\.rs$'
+        pass_filenames: false

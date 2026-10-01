@@ -1,0 +1,179 @@
+// Ledger gRPC contract. Implements the §8 interface from
+// docs/architecture.md exactly (holds lifecycle, transfers, fee posting,
+// balances, entry paging, audit recompute), extended with the operations the
+// engine has since gained: account creation, reversals, refunds, and the
+// per-payment transaction tax (F7).
+//
+// Money is ALWAYS `int64` minor units. Every money-moving request carries
+// `idempotency_scope`, `idempotency_key`, and `origin` (§8 note).
+syntax = "proto3";
+
+package anbarr.ledger.v1;
+
+import "google/protobuf/timestamp.proto";
+
+service Ledger {
+  // --- Holds lifecycle ---------------------------------------------------
+  rpc HoldFunds(HoldRequest) returns (HoldResponse);
+  rpc CaptureHold(CaptureRequest) returns (JournalResponse);
+  rpc ReleaseHold(ReleaseRequest) returns (JournalResponse);
+
+  // --- Money movement ----------------------------------------------------
+  rpc PostTransfer(TransferRequest) returns (TransferResponse);
+  rpc PostFee(FeeRequest) returns (JournalResponse);
+  rpc ReverseJournal(ReverseRequest) returns (JournalResponse);
+  rpc RefundPayment(RefundRequest) returns (JournalResponse);
+
+  // --- Accounts & statements ---------------------------------------------
+  rpc CreateAccount(CreateAccountRequest) returns (CreateAccountResponse);
+  rpc GetAccount(AccountRequest) returns (AccountResponse);
+  rpc ListEntries(ListRequest) returns (ListResponse);
+
+  // --- Internal audit ----------------------------------------------------
+  rpc AuditAccounts(AuditRequest) returns (AuditResponse);
+}
+
+message Origin {
+  string user_id = 1; // UUID; empty = system-initiated
+  string channel = 2;
+  string session_id = 3;
+  string payment_code = 4;
+}
+
+message HoldRequest {
+  string idempotency_scope = 1;
+  string idempotency_key = 2;
+  string account_id = 3; // UUID
+  int64 amount_minor = 4;
+  string currency = 5; // ISO 4217, e.g. "SLE"
+  google.protobuf.Timestamp expires_at = 6;
+  Origin origin = 7;
+}
+
+message HoldResponse {
+  string hold_id = 1; // UUID
+  string journal_id = 2; // UUID
+}
+
+message CaptureRequest {
+  string idempotency_scope = 1;
+  string idempotency_key = 2;
+  string hold_id = 3; // UUID
+  string target_account_id = 4; // UUID
+  Origin origin = 5;
+}
+
+message ReleaseRequest {
+  string idempotency_scope = 1;
+  string idempotency_key = 2;
+  string hold_id = 3; // UUID
+  Origin origin = 4;
+}
+
+message TransferRequest {
+  string idempotency_scope = 1;
+  string idempotency_key = 2;
+  string journal_type = 3; // p2p|topup|cash_in|cash_out|checkout
+  string currency = 4;
+  string payer_account_id = 5; // UUID
+  string payee_account_id = 6; // UUID
+  int64 amount_minor = 7;
+  uint32 fee_bps = 8;
+  uint32 tax_bps = 9; // 0 = no tax (see architecture.md F7)
+  Origin origin = 10;
+}
+
+message TransferResponse {
+  string journal_id = 1; // UUID
+  int64 fee_minor = 2;
+  int64 tax_minor = 3;
+  int64 commission_minor = 4;
+  string commission_journal_id = 5; // UUID; empty = none
+}
+
+message FeeRequest {
+  string idempotency_scope = 1;
+  string idempotency_key = 2;
+  string currency = 3;
+  string debit_account_id = 4; // UUID — the account charged
+  string fee_revenue_account_id = 5; // UUID — usually the platform singleton
+  int64 amount_minor = 6;
+  uint32 fee_bps = 7;
+  Origin origin = 8;
+}
+
+message ReverseRequest {
+  string idempotency_scope = 1;
+  string idempotency_key = 2;
+  string original_journal_id = 3; // UUID
+  Origin origin = 4;
+}
+
+message RefundRequest {
+  string idempotency_scope = 1;
+  string idempotency_key = 2;
+  string original_journal_id = 3; // UUID
+  string refund_from_account_id = 4; // UUID — the original's payee
+  string refund_to_account_id = 5; // UUID — the original's payer
+  int64 amount_minor = 6;
+  Origin origin = 7;
+}
+
+message JournalResponse {
+  string journal_id = 1; // UUID
+  string status = 2; // "posted"
+}
+
+message CreateAccountRequest {
+  string owner_type = 1; // user|merchant|agent
+  string owner_id = 2; // UUID
+  string account_type = 3; // wallet|float
+  string currency = 4;
+  string name = 5;
+}
+
+message CreateAccountResponse {
+  string account_id = 1; // UUID
+  bool created = 2; // false on idempotent replay
+  string status = 3;
+}
+
+message AccountRequest {
+  string account_id = 1; // UUID
+}
+
+message AccountResponse {
+  string account_id = 1; // UUID
+  string currency = 2;
+  int64 available_minor = 3;
+  int64 held_minor = 4;
+  int64 total_minor = 5;
+}
+
+message ListRequest {
+  string account_id = 1; // UUID
+  int32 limit = 2; // page size, server clamps
+  string page_token = 3; // opaque cursor; empty = first page
+}
+
+message ListResponse {
+  message Entry {
+    string entry_id = 1; // UUID
+    string journal_id = 2; // UUID
+    string journal_type = 3;
+    string direction = 4; // debit|credit
+    int64 amount_minor = 5;
+    string currency = 6;
+    google.protobuf.Timestamp created_at = 7;
+  }
+  repeated Entry entries = 1;
+  string next_page_token = 2; // empty = no more pages
+}
+
+message AuditRequest {
+  // No fields yet: full recompute of all account snapshots.
+}
+
+message AuditResponse {
+  repeated string drifted_account_ids = 1; // empty = clean
+}

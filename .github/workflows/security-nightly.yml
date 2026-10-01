@@ -1,0 +1,33 @@
+name: Security (nightly, platform)
+
+# Nightly mirror of platform/.github/workflows/security-nightly.yml —
+# GitHub Actions only reads workflows from the repository root. Dependency
+# advisories and secrets are re-checked daily even when nothing changed.
+
+on:
+  schedule:
+    # Daily 03:17 UTC
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  audit:
+    name: cargo audit (High/Critical)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@cargo-audit
+      - name: cargo audit
+        working-directory: platform
+        run: cargo audit
+
+  gitleaks:
+    name: gitleaks (full history)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: taiki-e/install-action@gitleaks
+      - name: gitleaks — full git history
+        run: gitleaks git --exit-code --redact --log-opts="--all --full-history" .
